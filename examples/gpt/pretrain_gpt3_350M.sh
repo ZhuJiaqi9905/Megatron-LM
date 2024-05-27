@@ -10,7 +10,7 @@ NNODES=4
 NODE_RANK=${1}
 WORLD_SIZE=$(($GPUS_PER_NODE*$NNODES))
 
-CHECKPOINT_PATH=/workspace/python/Megatron/data/checkpoint/gpt3_350M/
+CHECKPOINT_PATH=/workspace/python/Megatron-LM/data/checkpoint/gpt3_350M/
 VOCAB_FILE=/workspace/python/Megatron-LM/dataset/gpt2-vocab.json
 MERGE_FILE=/workspace/python/Megatron-LM/dataset/gpt2-merges.txt
 DATA_PATH=/workspace/python/Megatron-LM/dataset/gpt-dataset-simplewiki/my-gpt2_text_document
