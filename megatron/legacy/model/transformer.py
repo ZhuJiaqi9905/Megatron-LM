@@ -692,7 +692,7 @@ class ParallelAttention(MegatronModule):
                     self.hidden_size_per_attention_head
                 ],
                 dim=3)
-
+            print(f"query layer: {query_layer.size()}, hidden_size_per_attention_head {self.hidden_size_per_attention_head}")
             # [sq, b, ng, np/ng * hn] -> [sq, b, np, hn] -
             query_layer = query_layer.view(query_layer.size(0), query_layer.size(1), -1, self.hidden_size_per_attention_head)
         else:

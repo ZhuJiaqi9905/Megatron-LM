@@ -360,7 +360,6 @@ class Timers:
             reset (bool, optional): Whether to reset timer values after logging. Defaults to True.
             barrier (bool, optional): Whether to do a global barrier before time measurments. Defaults to False.
         """
-
         output_string = self.get_all_timers_string(names, normalizer, reset, barrier)
         # If no input rank is provided, log on last rank.
         if rank is None:

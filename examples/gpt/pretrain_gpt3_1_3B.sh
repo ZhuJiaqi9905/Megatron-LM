@@ -1,25 +1,40 @@
 #!/bin/bash
 
-# Runs the "345M" parameter model
-
 export CUDA_DEVICE_MAX_CONNECTIONS=1
 
+GPUS_PER_NODE=4
+# Change for multinode config
+MASTER_ADDR=172.21.0.42
+MASTER_PORT=6000
+NNODES=4
+NODE_RANK=${1}
+WORLD_SIZE=$(($GPUS_PER_NODE*$NNODES))
 
-
-CHECKPOINT_PATH=/workspace/python/Megatron/data/checkpoint/gpt345m/
+CHECKPOINT_PATH=/workspace/python/Megatron/data/checkpoint/gpt3_350M/
 VOCAB_FILE=/workspace/python/Megatron-LM/dataset/gpt2-vocab.json
 MERGE_FILE=/workspace/python/Megatron-LM/dataset/gpt2-merges.txt
 DATA_PATH=/workspace/python/Megatron-LM/dataset/gpt-dataset-simplewiki/my-gpt2_text_document
 
 
+DISTRIBUTED_ARGS="
+    --nproc_per_node $GPUS_PER_NODE \
+    --nnodes $NNODES \
+    --node_rank $NODE_RANK \
+    --master_addr $MASTER_ADDR \
+    --master_port $MASTER_PORT
+"
+
 GPT_ARGS="
+    --tensor-model-parallel-size 2 \
+    --pipeline-model-parallel-size 2 \
+    --sequence-parallel \
     --num-layers 24 \
-    --hidden-size 1024 \
-    --num-attention-heads 16 \
-    --seq-length 1024 \
-    --max-position-embeddings 1024 \
-    --micro-batch-size 1 \
-    --global-batch-size 4 \
+    --hidden-size 2048 \
+    --num-attention-heads 32 \
+    --seq-length 2048 \
+    --max-position-embeddings 2048 \
+    --micro-batch-size 4 \
+    --global-batch-size 1024 \
     --lr 0.00015 \
     --train-iters 500000 \
     --lr-decay-iters 320000 \
@@ -29,7 +44,7 @@ GPT_ARGS="
     --lr-warmup-fraction .01 \
     --clip-grad 1.0 \
     --fp16 \
-    --attention-softmax-in-fp32
+    --use_dist_ckpt
 "
 
 DATA_ARGS="
@@ -43,12 +58,14 @@ OUTPUT_ARGS="
     --log-interval 1 \
     --save-interval 10 \
     --eval-interval 1000 \
-    --eval-iters 10
+    --eval-iters 30
 "
 
-torchrun pretrain_gpt.py \
+torchrun $DISTRIBUTED_ARGS pretrain_gpt.py \
     $GPT_ARGS \
     $DATA_ARGS \
     $OUTPUT_ARGS \
+    --distributed-backend nccl \
     --save $CHECKPOINT_PATH \
     --load $CHECKPOINT_PATH
+

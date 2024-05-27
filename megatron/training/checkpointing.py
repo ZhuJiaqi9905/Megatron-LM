@@ -268,6 +268,7 @@ def get_rng_state(use_dist_ckpt: bool = False):
 def save_checkpoint(iteration, model, optimizer, opt_param_scheduler,
                     num_floating_point_operations_so_far):
     """Save a model checkpoint."""
+    
     args = get_args()
 
     # Only rank zero of the data parallel writes to the disk.
