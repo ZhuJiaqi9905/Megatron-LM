@@ -43,7 +43,8 @@ GPT_ARGS="
     --weight-decay 1e-2 \
     --lr-warmup-fraction .01 \
     --clip-grad 1.0 \
-    --fp16
+    --fp16 \
+    --attention-softmax-in-fp32
 "
 
 DATA_ARGS="
@@ -53,6 +54,7 @@ DATA_ARGS="
     --split 949,50,1
 "
 
+DATA_ARGS="--mock-data     --vocab-file $VOCAB_FILE  --merge-file $MERGE_FILE"
 OUTPUT_ARGS="
     --log-interval 1 \
     --save-interval 10 \
