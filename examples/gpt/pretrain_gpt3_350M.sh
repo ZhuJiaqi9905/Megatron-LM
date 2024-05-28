@@ -26,8 +26,9 @@ DISTRIBUTED_ARGS="
 "
 
 GPT_ARGS="
-    --tensor-model-parallel-size 1 \
-    --pipeline-model-parallel-size 1 \
+    --tensor-model-parallel-size 2 \
+    --pipeline-model-parallel-size 2 \
+    --sequence-parallel \
     --num-layers 24 \
     --hidden-size 1024 \
     --num-attention-heads 16 \
