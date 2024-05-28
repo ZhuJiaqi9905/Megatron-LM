@@ -44,8 +44,7 @@ GPT_ARGS="
     --lr-warmup-fraction .01 \
     --clip-grad 1.0 \
     --fp16 \
-    --use-dist-ckpt \
-    --use-mcore-models
+    --attention-softmax-in-fp32
 "
 
 DATA_ARGS="
@@ -54,6 +53,8 @@ DATA_ARGS="
     --merge-file $MERGE_FILE \
     --split 949,50,1
 "
+
+DATA_ARGS="--mock-data     --vocab-file $VOCAB_FILE  --merge-file $MERGE_FILE"
 
 OUTPUT_ARGS="
     --log-interval 1 \
@@ -68,5 +69,5 @@ torchrun $DISTRIBUTED_ARGS pretrain_gpt.py \
     $OUTPUT_ARGS \
     --distributed-backend nccl \
     --save $CHECKPOINT_PATH \
-    --load $CHECKPOINT_PATH
+    # --load $CHECKPOINT_PATH
 
