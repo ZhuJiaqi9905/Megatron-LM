@@ -43,7 +43,8 @@ GPT_ARGS="
     --lr-warmup-fraction .01 \
     --clip-grad 1.0 \
     --fp16 \
-    --use-dist-ckpt
+    --use-dist-ckpt \
+    --use-mcore-models
 "
 
 DATA_ARGS="
