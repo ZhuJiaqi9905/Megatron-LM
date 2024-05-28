@@ -51,8 +51,8 @@ DATA_ARGS="
     --data-path $DATA_PATH \
     --vocab-file $VOCAB_FILE \
     --merge-file $MERGE_FILE \
-    --split 949,50,1
-"
+    "
+    # --split 949,50,1
 
 OUTPUT_ARGS="
     --log-interval 1 \
