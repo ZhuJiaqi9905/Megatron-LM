@@ -33,7 +33,7 @@ GPT_ARGS="
     --num-attention-heads 16 \
     --seq-length 2048 \
     --max-position-embeddings 2048 \
-    --micro-batch-size 8 \
+    --micro-batch-size 4 \
     --global-batch-size 1024 \
     --lr 0.00015 \
     --train-iters 500000 \
