@@ -53,7 +53,7 @@ DATA_ARGS="
     --merge-file $MERGE_FILE \
     "
     # --split 949,50,1
-DATA_ARGS="--mock-data     --vocab-file $VOCAB_FILE "
+DATA_ARGS="--mock-data     --vocab-file $VOCAB_FILE  --merge-file $MERGE_FILE"
 OUTPUT_ARGS="
     --log-interval 1 \
     --save-interval 10 \
