@@ -53,7 +53,7 @@ DATA_ARGS="
     --merge-file $MERGE_FILE \
     "
     # --split 949,50,1
-
+DATA_ARGS="--mock-data"
 OUTPUT_ARGS="
     --log-interval 1 \
     --save-interval 10 \
