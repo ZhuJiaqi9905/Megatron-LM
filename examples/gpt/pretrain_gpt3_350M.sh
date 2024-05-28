@@ -43,7 +43,7 @@ GPT_ARGS="
     --lr-warmup-fraction .01 \
     --clip-grad 1.0 \
     --fp16 \
-    --use_dist_ckpt
+    --use-dist-ckpt
 "
 
 DATA_ARGS="
