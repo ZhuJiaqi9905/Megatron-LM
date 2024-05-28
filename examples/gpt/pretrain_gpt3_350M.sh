@@ -2,6 +2,7 @@
 
 export CUDA_DEVICE_MAX_CONNECTIONS=1
 export NCCL_SOCKET_IFNAME=enp
+export NCCL_DEBUG=INFO
 GPUS_PER_NODE=4
 # Change for multinode config
 MASTER_ADDR=172.21.0.42
