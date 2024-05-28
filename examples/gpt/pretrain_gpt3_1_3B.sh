@@ -1,5 +1,5 @@
 #!/bin/bash
-export NCCL
+
 export CUDA_DEVICE_MAX_CONNECTIONS=1
 export NCCL_SOCKET_IFNAME=enp
 GPUS_PER_NODE=4

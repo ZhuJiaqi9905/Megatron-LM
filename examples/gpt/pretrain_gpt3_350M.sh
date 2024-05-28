@@ -1,7 +1,7 @@
 #!/bin/bash
 
 export CUDA_DEVICE_MAX_CONNECTIONS=1
-
+export NCCL_SOCKET_IFNAME=enp
 GPUS_PER_NODE=4
 # Change for multinode config
 MASTER_ADDR=172.21.0.42
@@ -42,9 +42,7 @@ GPT_ARGS="
     --weight-decay 1e-2 \
     --lr-warmup-fraction .01 \
     --clip-grad 1.0 \
-    --fp16 \
-    --use-dist-ckpt \
-    --use-mcore-models
+    --fp16 
 "
 
 DATA_ARGS="
