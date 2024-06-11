@@ -27,6 +27,7 @@ from megatron.checkpointing import save_checkpoint
 from megatron.data.samplers import DistributedBatchSampler
 from megatron.fp16 import FP16_Optimizer
 
+from varuna import get_varuna_config, get_this_rank_config_varuna
 
 def reduce_losses(losses):
     """Reduce a tensor of losses across all GPUs."""
@@ -96,8 +97,13 @@ def make_data_loader(dataset):
     args = get_args()
 
     # Data parallel arguments.
-    world_size = mpu.get_data_parallel_world_size()
-    rank = mpu.get_data_parallel_rank()
+    if args.varuna:
+        pipeline_parallel_size, data_parallel_size = get_varuna_config(args.stage_to_rank_map)
+        pipeline_stage, data_parallel_rank = get_this_rank_config_varuna(args.stage_to_rank_map, args.rank)
+        world_size = data_parallel_size; rank = data_parallel_rank
+    else:
+        world_size = mpu.get_data_parallel_world_size()
+        rank = mpu.get_data_parallel_rank()
     global_batch_size = args.batch_size * world_size
     num_workers = args.num_workers
 

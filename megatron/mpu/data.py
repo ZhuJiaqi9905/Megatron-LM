@@ -73,7 +73,7 @@ def _build_key_size_numel_dictionaries(keys, data):
     return key_size, key_numel, total_numel
 
 
-def broadcast_data(keys, data, datatype):
+def broadcast_data(keys, data, datatype, device=None):
     """Broadcast data from rank zero of each model parallel group to the
     members of the same model parallel group.
 
@@ -88,16 +88,18 @@ def broadcast_data(keys, data, datatype):
     key_size, key_numel, total_numel = _build_key_size_numel_dictionaries(keys,
                                                                           data)
 
+    if device is None:
+        device = torch.cuda.current_device() 
     # Pack on rank zero.
     if get_model_parallel_rank() == 0:
         # Check that all keys have the same data type.
         _check_data_types(keys, data, datatype)
         # Flatten the data associated with the keys
         flatten_data = torch.cat(
-            [data[key].contiguous().view(-1) for key in keys], dim=0).cuda()
+            [data[key].contiguous().view(-1) for key in keys], dim=0).to(device)
     else:
         flatten_data = torch.empty(total_numel,
-                                   device=torch.cuda.current_device(),
+                                   device=device,
                                    dtype=datatype)
 
     # Boradcast

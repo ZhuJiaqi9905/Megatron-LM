@@ -28,6 +28,8 @@ from megatron.model.fused_softmax import FusedScaleMaskSoftmax
 from megatron.model.fused_bias_gelu import bias_gelu_impl
 from megatron.model.utils import openai_gelu, erf_gelu
 
+from varuna import CutPoint 
+
 # flags required to enable jit fusion kernels
 torch._C._jit_set_profiling_mode(False)
 torch._C._jit_set_profiling_executor(False)
@@ -269,7 +271,7 @@ class ParallelSelfAttention(MegatronModule):
             output_size[2], 
             output_size[3],
             dtype=query_layer.dtype, 
-            device=torch.cuda.current_device())
+            device=query_layer.device)
 
         # Raw attention scores. [b * np, sq, sk]
         matmul_result = torch.baddbmm(matmul_result, 
@@ -309,8 +311,8 @@ class ParallelSelfAttention(MegatronModule):
 
         # This is actually dropping out entire tokens to attend to, which might
         # seem a bit unusual, but is taken from the original Transformer paper.
-        with mpu.get_cuda_rng_tracker().fork():
-            attention_probs = self.attention_dropout(attention_probs)
+        # with mpu.get_cuda_rng_tracker().fork():
+        attention_probs = self.attention_dropout(attention_probs)
 
 
         # =========================
@@ -520,6 +522,7 @@ class ParallelTransformer(MegatronModule):
                 output_layer_init_method, layer_number)
         self.layers = torch.nn.ModuleList(
             [build_layer(i + 1) for i in range(self.num_unique_layers)])
+        self.cutpoints = torch.nn.ModuleList([CutPoint() for i in range(self.num_layers-1)])
 
         # Print layer ordering.
         if self.num_layers != self.num_unique_layers:
@@ -581,7 +584,8 @@ class ParallelTransformer(MegatronModule):
                 'activation checkpointing'
 
         # data format change to avoid explicit tranposes : [b s h] --> [s b h]
-        hidden_states = hidden_states.transpose(0, 1).contiguous()
+        if hidden_states is not None and hidden_states.dim() >= 2:
+            hidden_states = hidden_states.transpose(0, 1).contiguous()
 
         if self.checkpoint_activations:
             hidden_states = self._checkpointed_forward(hidden_states,
@@ -598,6 +602,8 @@ class ParallelTransformer(MegatronModule):
                                       attention_mask,
                                       layer_past=past,
                                       get_key_value=get_key_value)
+                if index < (self.num_layers-1):
+                    hidden_states = self.cutpoints[index](hidden_states)
                 if get_key_value:
                     hidden_states, present = hidden_states
                     presents.append(present)

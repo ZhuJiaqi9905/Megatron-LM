@@ -50,9 +50,14 @@ class GPT2Model(MegatronModule):
             scaled_init_method=scaled_init_method_normal(args.init_method_std,
                                                          args.num_layers))
 
+        if args.varuna:
+            self.lm_head_weight = torch.nn.Parameter(self.language_model.embedding.word_embeddings.weight)
+        else:
+            self.lm_head_weight = self.language_model.embedding.word_embeddings.weight
+
     def forward(self, input_ids, position_ids, attention_mask, labels=None,
                 tokentype_ids=None, layer_past=None, get_key_value=False,
-                forward_method_parallel_output=None):
+                forward_method_parallel_output=None, loss_mask=None):
 
         # Language model.
         lm_output = self.language_model(input_ids,
@@ -71,7 +76,7 @@ class GPT2Model(MegatronModule):
             parallel_output = forward_method_parallel_output
         output = parallel_lm_logits(
             lm_output,
-            self.language_model.embedding.word_embeddings.weight,
+            self.lm_head_weight,
             parallel_output)
 
         if get_key_value:
@@ -85,6 +90,11 @@ class GPT2Model(MegatronModule):
                 loss = mpu.vocab_parallel_cross_entropy(output, labels)
             else:
                 loss = mpu.vocab_parallel_cross_entropy(output.float(), labels)
+            
+            if loss_mask is not None:
+                loss_mask = loss_mask.view(-1)
+                loss = torch.sum(loss.view(-1) * loss_mask) / loss_mask.sum()
+            
             return loss
 
 
@@ -99,7 +109,9 @@ class GPT2Model(MegatronModule):
 
     def load_state_dict(self, state_dict, strict=True):
         """Customized load."""
-
+        if "lm_head_weight" in state_dict:
+            with torch.no_grad():
+                self.lm_head_weight.copy_(state_dict["lm_head_weight"])
         if self._language_model_key in state_dict:
             state_dict = state_dict[self._language_model_key]
         self.language_model.load_state_dict(state_dict, strict=strict)

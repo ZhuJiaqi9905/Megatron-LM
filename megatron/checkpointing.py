@@ -17,7 +17,7 @@
 
 import os
 import random
-import sys
+import sys, time
 import numpy as np
 
 import torch
@@ -96,18 +96,19 @@ def save_checkpoint(iteration, model, optimizer, lr_scheduler):
     # Only rank zero of the data parallel writes to the disk.
     if isinstance(model, torchDDP):
         model = model.module
-    if mpu.get_data_parallel_rank() == 0:
+    if args.rank==0 or (not args.varuna and mpu.get_data_parallel_rank() == 0):
 
         # Arguments, iteration, and model.
         state_dict = {}
         state_dict['args'] = args
         state_dict['checkpoint_version'] = 2.0
         state_dict['iteration'] = iteration
-        state_dict['model'] = model.state_dict_for_save_checkpoint()
+        if not args.varuna:
+            state_dict['model'] = model.state_dict_for_save_checkpoint()
 
         # Optimizer stuff.
         if not args.no_save_optim:
-            if optimizer is not None:
+            if optimizer is not None and not args.varuna:
                 state_dict['optimizer'] = optimizer.state_dict()
             if lr_scheduler is not None:
                 state_dict['lr_scheduler'] = lr_scheduler.state_dict()
@@ -129,10 +130,14 @@ def save_checkpoint(iteration, model, optimizer, lr_scheduler):
         torch.save(state_dict, checkpoint_name)
         print('  successfully saved {}'.format(checkpoint_name))
 
+    ckpt_future = None
+    if args.varuna:
+        ckpt_future = model.checkpoint(args.save, tempdir=None, step=iteration)
+
     # Wait so everyone is done (necessary)
     torch.distributed.barrier()
     # And update the latest iteration
-    if torch.distributed.get_rank() == 0:
+    if ckpt_future is not None and torch.distributed.get_rank() == 0:
         tracker_filename = get_checkpoint_tracker_filename(args.save)
         with open(tracker_filename, 'w') as f:
             f.write(str(iteration))
@@ -147,34 +152,39 @@ def load_checkpoint(model, optimizer, lr_scheduler, load_arg='load'):
 
     if isinstance(model, torchDDP):
         model = model.module
-    # Read the tracker file and set the iteration.
-    tracker_filename = get_checkpoint_tracker_filename(load_dir)
+    
+    if args.varuna and args.resume_step is not None:
+        iteration = args.resume_step
+        release = False
+    else:
+        # Read the tracker file and set the iteration.
+        tracker_filename = get_checkpoint_tracker_filename(load_dir)
 
-    # If no tracker file, return iretation zero.
-    if not os.path.isfile(tracker_filename):
-        print_rank_0('WARNING: could not find the metadata file {} '.format(
-            tracker_filename))
-        print_rank_0('    will not load any checkpoints and will start from '
-                     'random')
-        return 0
+        # If no tracker file, return iretation zero.
+        if not os.path.isfile(tracker_filename):
+            print_rank_0('WARNING: could not find the metadata file {} '.format(
+                tracker_filename))
+            print_rank_0('    will not load any checkpoints and will start from '
+                        'random')
+            return 0
 
-    # Otherwise, read the tracker file and either set the iteration or
-    # mark it as a release checkpoint.
-    iteration = 0
-    release = False
-    with open(tracker_filename, 'r') as f:
-        metastring = f.read().strip()
-        try:
-            iteration = int(metastring)
-        except ValueError:
-            release = metastring == 'release'
-            if not release:
-                print_rank_0('ERROR: Invalid metadata file {}. Exiting'.format(
-                    tracker_filename))
-                sys.exit()
+        # Otherwise, read the tracker file and either set the iteration or
+        # mark it as a release checkpoint.
+        iteration = 0
+        release = False
+        with open(tracker_filename, 'r') as f:
+            metastring = f.read().strip()
+            try:
+                iteration = int(metastring)
+            except ValueError:
+                release = metastring == 'release'
+                if not release:
+                    print_rank_0('ERROR: Invalid metadata file {}. Exiting'.format(
+                        tracker_filename))
+                    sys.exit()
 
-    assert iteration > 0 or release, 'error parsing metadata file {}'.format(
-        tracker_filename)
+        assert iteration > 0 or release, 'error parsing metadata file {}'.format(
+            tracker_filename)
 
     # Checkpoint.
     checkpoint_name = get_checkpoint_name(load_dir, iteration, release)
@@ -223,12 +233,15 @@ def load_checkpoint(model, optimizer, lr_scheduler, load_arg='load'):
         print_rank_0('could not find arguments in the checkpoint ...')
 
     # Model.
-    model.load_state_dict(state_dict['model'])
+    if not args.varuna:
+        model.load_state_dict(state_dict['model'])
+    else:
+        model.load_checkpoint(args.load, iteration)
 
     # Optimizer.
     if not release and not args.finetune and not args.no_load_optim:
         try:
-            if optimizer is not None:
+            if optimizer is not None and not args.varuna:
                 optimizer.load_state_dict(state_dict['optimizer'])
             if lr_scheduler is not None:
                 lr_scheduler.load_state_dict(state_dict['lr_scheduler'])

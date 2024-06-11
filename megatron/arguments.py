@@ -40,7 +40,7 @@ def parse_args(extra_args_provider=None, defaults={},
     parser = _add_data_args(parser)
     parser = _add_autoresume_args(parser)
     parser = _add_realm_args(parser)
-
+    parser = _add_varuna_args(parser)
     # Custom arguments.
     if extra_args_provider is not None:
         parser = extra_args_provider(parser)
@@ -66,7 +66,7 @@ def parse_args(extra_args_provider=None, defaults={},
 
     # Parameters dtype.
     args.params_dtype = torch.float
-    if args.fp16:
+    if args.fp16 and not args.varuna:
         args.params_dtype = torch.half
     if args.rank == 0:
         print('using {} for parameters ...'.format(args.params_dtype),
@@ -90,6 +90,8 @@ def parse_args(extra_args_provider=None, defaults={},
     # Check required arguments.
     required_args = ['num_layers', 'hidden_size', 'num_attention_heads',
                      'max_position_embeddings']
+    if args.varuna:
+        required_args += ['stage_to_rank_map', 'chunk_size']
     for req_arg in required_args: 
         _check_arg_is_not_none(args, req_arg)
 
@@ -250,7 +252,7 @@ def _add_training_args(parser):
                         help='Enable bias and gelu fusion.')
     group.add_argument('--bias-dropout-fusion', action='store_true',
                        help='Enable bias and dropout fusion.')
-
+    
     return parser
 
 
@@ -300,6 +302,20 @@ def _add_learning_rate_args(parser):
 
     return parser
 
+def _add_varuna_args(parser):
+    group = parser.add_argument_group(title='varuna')
+
+    group.add_argument("--varuna", action='store_true', default=False,
+                        help = "Enable varuna pipeline training")
+    group.add_argument("--stage_to_rank_map", type=str, default=None,
+                        help = "stage to rank map of Varuna model")
+    group.add_argument("--chunk_size", type=int,default=None,
+                        help = "number of microbatches for pipeline")
+    group.add_argument("--rank", type=int, default=-1)
+    group.add_argument("--resume_step", type=int, default=None)
+    group.add_argument("--profiling", action='store_true', 
+                        help="whether to run profiling for Varuna")
+    return parser
 
 def _add_checkpointing_args(parser):
     group = parser.add_argument_group(title='checkpointing')

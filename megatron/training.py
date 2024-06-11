@@ -17,7 +17,7 @@
 
 from datetime import datetime
 import math
-import sys
+import sys, os
 import torch
 from torch.nn.parallel.distributed import DistributedDataParallel as torchDDP
 from apex.optimizers import FusedAdam as Adam
@@ -40,9 +40,18 @@ from megatron.utils import check_adlr_autoresume_termination
 from megatron.utils import make_data_loader
 from megatron.utils import report_memory
 
+from varuna import Varuna, get_varuna_config, Profiler
+
+CKPT_AND_STOP = False
+
+def on_demand_checkpoint():
+    global CKPT_AND_STOP
+    CKPT_AND_STOP = True
 
 def pretrain(train_valid_test_dataset_provider, model_provider,
-             forward_step_func, extra_args_provider=None, args_defaults={}):
+             forward_step_func, get_batch=None, 
+             varuna_step_func=None, varuna_eval_func=None,
+             extra_args_provider=None, args_defaults={}):
     """Main training program.
 
     This function will run the followings in the order provided:
@@ -74,32 +83,42 @@ def pretrain(train_valid_test_dataset_provider, model_provider,
     args = get_args()
     timers = get_timers()
 
+    train_ds, valid_ds, test_ds = build_train_valid_test_datasets(train_valid_test_dataset_provider)
+    def get_batch_fn(size, device=None):
+        sample_iter = iter(torch.utils.data.DataLoader(train_ds, batch_size=size))
+        return get_batch(sample_iter, device=device) 
+
     # Model, optimizer, and learning rate.
     timers('model and optimizer').start()
-    model, optimizer, lr_scheduler = setup_model_and_optimizer(model_provider)
+    model, optimizer, lr_scheduler = setup_model_and_optimizer(model_provider, get_batch_fn)
     timers('model and optimizer').stop()
 
-    # Data stuff.
+    # Data iterators.
     timers('train/valid/test data iterators').start()
     train_data_iterator, valid_data_iterator, test_data_iterator \
         = build_train_valid_test_data_iterators(
-            train_valid_test_dataset_provider)
+            train_ds, valid_ds, test_ds)
     timers('train/valid/test data iterators').stop()
 
     # Print setup timing.
     print_rank_0('done with setups ...')
     timers.log(['model and optimizer', 'train/valid/test data iterators'])
+    
+    if args.varuna and args.profiling:
+        profile = model.profile_all(list(range(1,25)))
+        return
+    
     print_rank_0('training ...')
 
     iteration = 0
     if args.do_train and args.train_iters > 0:
-        iteration = train(forward_step_func,
+        iteration = train(forward_step_func if not args.varuna else varuna_step_func,
                           model, optimizer, lr_scheduler,
-                          train_data_iterator, valid_data_iterator)
+                          train_data_iterator, valid_data_iterator, varuna_eval_func)
 
     if args.do_valid:
         prefix = 'the end of training for val data'
-        evaluate_and_print_results(prefix, forward_step_func,
+        evaluate_and_print_results(prefix, forward_step_func if not args.varuna else varuna_eval_func,
                                    valid_data_iterator, model,
                                    iteration, False)
 
@@ -109,17 +128,32 @@ def pretrain(train_valid_test_dataset_provider, model_provider,
     if args.do_test:
         # Run on test data.
         prefix = 'the end of training for test data'
-        evaluate_and_print_results(prefix, forward_step_func,
+        evaluate_and_print_results(prefix, forward_step_func if not args.varuna else varuna_eval_func,
                                    test_data_iterator, model,
                                    0, True)
 
 
-def get_model(model_provider_func):
+def get_model(model_provider_func, get_batch_fn=None):
     """Build the model."""
     args = get_args()
 
     # Build model on cpu.
     model = model_provider_func()
+    profiler = None
+    if args.varuna:
+        assert get_batch_fn is not None, "Must provide get_batch_fn to varuna"
+        shared_weights = [("language_model.embedding.word_embeddings.weight","lm_head_weight")]
+
+        if args.profiling:
+            profiler = Profiler(model, get_batch_fn, fp16=args.fp16, device = args.local_rank,
+                        from_cache=True, out_folder=args.save, add_to_existing=True)
+        else:
+            pipeline_parallel_size, data_parallel_size = get_varuna_config(args.stage_to_rank_map)
+            args.partitions = pipeline_parallel_size
+            global_batch_size = args.batch_size * data_parallel_size
+            model = Varuna( model, args.stage_to_rank_map, get_batch_fn, global_batch_size, 
+                            args.chunk_size, args.fp16, local_rank=args.local_rank, 
+                            device=args.local_rank, shared_weights=shared_weights)
 
     # Print number of parameters.
     if mpu.get_data_parallel_rank() == 0:
@@ -127,26 +161,29 @@ def get_model(model_provider_func):
             mpu.get_model_parallel_rank(),
             sum([p.nelement() for p in model.parameters()])), flush=True)
 
-    # GPU allocation.
-    model.cuda(torch.cuda.current_device())
+    # Varuna handles fp16, parallelisation, moving to devices internally
+    if not args.varuna:
+        # GPU allocation.
+        model.cuda(torch.cuda.current_device())
 
-    # Fp16 conversion.
-    if args.fp16:
-        model = FP16_Module(model)
+        # Fp16 conversion.
+        if args.fp16:
+            model = FP16_Module(model)
 
-    # Wrap model for distributed training."""
-    if args.DDP_impl == 'torch':
-        i = torch.cuda.current_device()
-        model = torchDDP(model, device_ids=[i], output_device=i,
-                         process_group=mpu.get_data_parallel_group())
-        return model
-    if args.DDP_impl == 'local':
-        model = LocalDDP(model)
-        return model
+        # Wrap model for distributed training."""
+        if args.DDP_impl == 'torch':
+            i = torch.cuda.current_device()
+            model = torchDDP(model, device_ids=[i], output_device=i,
+                            process_group=mpu.get_data_parallel_group())
+            return model
+        if args.DDP_impl == 'local':
+            model = LocalDDP(model)
+            return model
 
-    raise NotImplementedError('Unknown DDP implementation specified: {}. '
-                              'Exiting.'.format(args.DDP_impl))
+        raise NotImplementedError('Unknown DDP implementation specified: {}. '
+                                'Exiting.'.format(args.DDP_impl))
 
+    return model, profiler
 
 def get_optimizer(model):
     """Set up the optimizer."""
@@ -167,8 +204,8 @@ def get_optimizer(model):
     optimizer = Adam(param_groups, lr=args.lr, weight_decay=args.weight_decay,
         betas=(args.adam_beta1, args.adam_beta2), eps=args.adam_eps)
 
-    # Wrap into fp16 optimizer.
-    if args.fp16:
+    # Wrap into fp16 optimizer (if not handled by varuna).
+    if not args.varuna and args.fp16:
         optimizer = FP16_Optimizer(optimizer,
                                    static_loss_scale=args.loss_scale,
                                    dynamic_loss_scale=args.dynamic_loss_scale,
@@ -206,12 +243,16 @@ def get_learning_rate_scheduler(optimizer):
     return lr_scheduler
 
 
-def setup_model_and_optimizer(model_provider_func):
+def setup_model_and_optimizer(model_provider_func, get_batch_fn):
     """Setup model and optimizer."""
     args = get_args()
 
-    model = get_model(model_provider_func)
+    model, profiler = get_model(model_provider_func, get_batch_fn)
     optimizer = get_optimizer(model)
+    if args.varuna:
+        if args.profiling:
+            model = profiler
+        model.set_optimizer(optimizer, init_loss_scale=2**17, min_loss_scale=args.min_scale)
     lr_scheduler = get_learning_rate_scheduler(optimizer)
 
     if args.load is not None:
@@ -220,7 +261,7 @@ def setup_model_and_optimizer(model_provider_func):
         args.iteration = 0
 
     # get model without FP16 and/or TorchDDP wrappers
-    unwrapped_model = model
+    unwrapped_model = model.model if args.varuna else model
     while hasattr(unwrapped_model, 'module'):
         unwrapped_model = unwrapped_model.module
 
@@ -269,34 +310,47 @@ def backward_step(optimizer, model, loss):
     timers('backward-clip-grad').stop()
 
 
-def train_step(forward_step_func, data_iterator,
-               model, optimizer, lr_scheduler):
+def train_step(forward_or_varuna_step_func, data_iterator,
+               model, optimizer, lr_scheduler, iteration):
     """Single training step."""
     args = get_args()
     timers = get_timers()
 
-    # Forward model for one step.
-    timers('forward').start()
-    loss, loss_reduced = forward_step_func(data_iterator, model)
-    timers('forward').stop()
+    if not args.varuna:
+        forward_step_func = forward_or_varuna_step_func
+        # Forward model for one step.
+        timers('forward').start()
+        loss, loss_reduced = forward_step_func(data_iterator, model)
+        timers('forward').stop()
 
-    # Calculate gradients, reduce across processes, and clip.
-    timers('backward').start()
-    backward_step(optimizer, model, loss)
-    timers('backward').stop()
-
+        # Calculate gradients, reduce across processes, and clip.
+        timers('backward').start()
+        backward_step(optimizer, model, loss)
+        timers('backward').stop()
+        overflow = False
+        global_norm = -1
+    else:
+        # timers('varuna')
+        varuna_step_func = forward_or_varuna_step_func
+        loss, loss_reduced, overflow, global_norm = \
+                varuna_step_func(data_iterator, model)
+  
     # Update parameters.
     timers('optimizer').start()
-    optimizer.step()
+    if not overflow:  
+        optimizer.step()
+    model.zero_grad()
+    
+    overflow = optimizer.overflow if (args.fp16 and not args.varuna) else overflow
     timers('optimizer').stop()
 
     # Update learning rate.
     skipped_iter = 0
-    if not (args.fp16 and optimizer.overflow):
+    if not overflow:
         lr_scheduler.step()
     else:
         skipped_iter = 1
-
+        
     return loss_reduced, skipped_iter
 
 
@@ -391,8 +445,8 @@ def training_log(loss_dict, total_loss_dict, learning_rate, iteration,
     return report_memory_flag
 
 
-def train(forward_step_func, model, optimizer, lr_scheduler,
-          train_data_iterator, valid_data_iterator):
+def train(forward_or_varuna_step_func, model, optimizer, lr_scheduler,
+          train_data_iterator, valid_data_iterator, varuna_eval_func):
     """Train the model function."""
     args = get_args()
     timers = get_timers()
@@ -409,17 +463,21 @@ def train(forward_step_func, model, optimizer, lr_scheduler,
     timers('interval time').start()
     report_memory_flag = True
     while iteration < args.train_iters:
-        loss_dict, skipped_iter = train_step(forward_step_func,
+        loss_dict, skipped_iter = train_step(forward_or_varuna_step_func,
                                              train_data_iterator,
                                              model,
                                              optimizer,
-                                             lr_scheduler)
+                                             lr_scheduler, iteration)
         iteration += 1
+
+        if CKPT_AND_STOP:
+            save_checkpoint(iteration, model, optimizer, lr_scheduler)
+            exit()
 
         # Logging.
         loss_scale = None
         if args.fp16:
-            loss_scale = optimizer.loss_scale
+            loss_scale = optimizer.loss_scale if not args.varuna else model.get_loss_scale()
         report_memory_flag = training_log(loss_dict, total_loss_dict,
                                           optimizer.param_groups[0]['lr'],
                                           iteration, loss_scale,
@@ -437,10 +495,10 @@ def train(forward_step_func, model, optimizer, lr_scheduler,
             save_checkpoint(iteration, model, optimizer, lr_scheduler)
 
         # Evaluation
-        if args.eval_interval and iteration % args.eval_interval == 0 and \
+        if (not CKPT_AND_STOP) and args.eval_interval and iteration % args.eval_interval == 0 and \
            args.do_valid:
             prefix = 'iteration {}'.format(iteration)
-            evaluate_and_print_results(prefix, forward_step_func,
+            evaluate_and_print_results(prefix, forward_step_func if not args.varuna else varuna_eval_func,
                                        valid_data_iterator, model,
                                        iteration, False)
 
@@ -510,18 +568,18 @@ def evaluate_and_print_results(prefix, forward_step_func,
     print_rank_0('-' * length)
 
 
-def build_train_valid_test_data_iterators(
+def build_train_valid_test_datasets(
         build_train_valid_test_datasets_provider):
     """XXX"""
     args = get_args()
-
-    (train_dataloader, valid_dataloader, test_dataloader) = (None, None, None)
 
     print_rank_0('> building train, validation, and test datasets ...')
     # Data loader only on rank 0 of each model parallel group.
     if mpu.get_model_parallel_rank() == 0:
         # Rank, size, and global batch size.
         data_parallel_size = mpu.get_data_parallel_world_size()
+        if args.varuna:
+            pipeline_parallel_size, data_parallel_size = get_varuna_config(args.stage_to_rank_map)
         global_batch_size = args.batch_size * data_parallel_size
 
         # Number of train/valid/test samples.
@@ -539,7 +597,16 @@ def build_train_valid_test_data_iterators(
         # Build the datasets.
         train_ds, valid_ds, test_ds = build_train_valid_test_datasets_provider(
             train_val_test_num_samples)
+        return train_ds, valid_ds, test_ds
+    else:
+        return None, None, None
 
+def build_train_valid_test_data_iterators(train_ds, valid_ds, test_ds):
+    args = get_args()
+
+    (train_dataloader, valid_dataloader, test_dataloader) = (None, None, None)
+    
+    if mpu.get_model_parallel_rank() == 0:
         # Build dataloders.
         train_dataloader = make_data_loader(train_ds)
         valid_dataloader = make_data_loader(valid_ds)

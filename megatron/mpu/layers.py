@@ -55,8 +55,8 @@ def _initialize_affine_weight_gpu(weight, init_method,
     weight.partition_dim = partition_dim
     weight.partition_stride = stride
     
-    with get_cuda_rng_tracker().fork():
-        init_method(weight)
+    # with get_cuda_rng_tracker().fork():
+    init_method(weight)
 
 
 def _initialize_affine_weight_cpu(weight, output_size, input_size,
