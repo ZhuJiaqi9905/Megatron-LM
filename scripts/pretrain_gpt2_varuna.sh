@@ -30,8 +30,8 @@ NUM_ATTENTION_HEADS=16
 # NCCL_DEBUG=INFO NCCL_SOCKET_IFNAME=eth0 NCCL_SOCKET_NTHREADS=4 NCCL_NSOCKS_PERTHREAD=4 \
 NCCL_SOCKET_IFNAME=enp NCCL_DEBUG=INFO \
 python3 -m varuna.run_varuna --ssh_port 2230 \
---nstages 2 --chunk_size 1 \
---batch_size 8192  \
+--nstages 4 --chunk_size 1 \
+--batch_size 1024  \
 --gpus_per_node 4 \
 --no_morphing pretrain_gpt2.py \
        --num-layers $NUM_LAYERS \
