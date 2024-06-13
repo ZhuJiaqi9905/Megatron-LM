@@ -1,8 +1,8 @@
 #! /bin/bash
 
-DATA_PATH=/workspace/python/Megatron-LM/dataset/gpt-dataset-simplewiki/my-gpt2_text_document
-VOCAB_FILE=/workspace/python/Megatron-LM/dataset/gpt2-vocab.json
-MERGE_FILE=/workspace/python/Megatron-LM/dataset/gpt2-merges.txt
+DATA_PATH=/mnt/gpu-91/dataset/gpt-dataset-simplewiki/my-gpt2_text_document
+VOCAB_FILE=/mnt/gpu-91/dataset/gpt2-vocab.json
+MERGE_FILE=/mnt/gpu-91/dataset/gpt2-merges.txt
 
 CHECKPOINT_PATH=/workspace/python/Megatron-LM-varuna/checkpoints/gpt3_350M
 
