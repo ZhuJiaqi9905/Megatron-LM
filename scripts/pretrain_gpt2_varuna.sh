@@ -1,39 +1,47 @@
 #! /bin/bash
 
+model=gpt3_350M
+nstages=4
+mbs=1
+
+gbs=1024
+gpus_per_node=1
+
+
+if [[ "${model}" == "gpt3_350M" ]]; then
+       NUM_LAYERS=24
+       HIDDEN_SIZE=1024
+       NUM_ATTENTION_HEADS=16
+elif [[ "${model}" == "gpt3_1_3B" ]]; then
+       NUM_LAYERS=24
+       HIDDEN_SIZE=2048
+       NUM_ATTENTION_HEADS=32
+elif [[ "${model}" == "gpt3_2_7B" ]]; then
+       NUM_LAYERS=32
+       HIDDEN_SIZE=2560
+       NUM_ATTENTION_HEADS=32
+elif [[ "${model}" == "gpt3_6_7B" ]]; then
+       NUM_LAYERS=32
+       HIDDEN_SIZE=4096
+       NUM_ATTENTION_HEADS=32
+else
+       echo "Don't have model ${model}"
+       exit -1
+fi
+
 DATA_PATH=/mnt/gpu-91/dataset/gpt-dataset-simplewiki/my-gpt2_text_document
 VOCAB_FILE=/mnt/gpu-91/dataset/gpt2-vocab.json
 MERGE_FILE=/mnt/gpu-91/dataset/gpt2-merges.txt
+CHECKPOINT_PATH=/mnt/gpu-91/varuna/checkpoints/${model}
 
-CHECKPOINT_PATH=/workspace/python/Megatron-LM-varuna/checkpoints/gpt3_350M
+rm _tmp_*
+rm -rf ${CHECKPOINT_PATH}/*
 
-# 355m model
-NUM_LAYERS=24
-HIDDEN_SIZE=1024
-NUM_ATTENTION_HEADS=16
-
-# # 1.5bn model
-# NUM_LAYERS=48
-# HIDDEN_SIZE=1600
-# NUM_ATTENTION_HEADS=16
-
-# # 2.5bn model
-# NUM_LAYERS=54
-# HIDDEN_SIZE=1920
-# NUM_ATTENTION_HEADS=20
-
-# #8.3bn model
-# NUM_LAYERS=72
-# HIDDEN_SIZE=3072
-# NUM_ATTENTION_HEADS=32
-
-
-# NCCL_DEBUG=INFO NCCL_SOCKET_IFNAME=eth0 NCCL_SOCKET_NTHREADS=4 NCCL_NSOCKS_PERTHREAD=4 \
-NCCL_SOCKET_IFNAME=enp NCCL_DEBUG=INFO \
-python3 -m varuna.run_varuna --ssh_port 2230 \
---nstages 4 --chunk_size 1 \
---batch_size 1024  \
---gpus_per_node 4 \
---no_morphing pretrain_gpt2.py \
+python3 -m varuna.run_varuna \
+       --nstages ${nstages} --chunk_size ${mbs} \
+       --batch_size ${gbs} \
+       --gpus_per_node ${gpus_per_node} \
+       --no_morphing pretrain_gpt2.py \
        --num-layers $NUM_LAYERS \
        --hidden-size $HIDDEN_SIZE \
        --num-attention-heads $NUM_ATTENTION_HEADS \
@@ -41,9 +49,8 @@ python3 -m varuna.run_varuna --ssh_port 2230 \
        --max-position-embeddings 512 \
        --train-iters 18750 \
        --lr-decay-iters 18750 \
-       --save $CHECKPOINT_PATH \
-       --load $CHECKPOINT_PATH \
-       --data-path $DATA_PATH \
+       --save ${CHECKPOINT_PATH} \
+       --data-path ${DATA_PATH} \
        --vocab-file ${VOCAB_FILE} \
        --merge-file ${MERGE_FILE} \
        --data-impl mmap \
@@ -57,11 +64,12 @@ python3 -m varuna.run_varuna --ssh_port 2230 \
        --warmup .01 \
        --log-interval 1 \
        --exit-interval 100 \
-       --save-interval 10 \
+       --save-interval 5 \
        --eval-interval 1000 \
        --use-cpu-initialization \
-       --eval-iters 10 \
-       --varuna --fp16
-
+       --eval-iters 5 \
+       --varuna --fp16 \
+       # --load ${CHECKPOINT_PATH} \
 
 set +x
+

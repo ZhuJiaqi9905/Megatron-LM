@@ -18,6 +18,7 @@
 from datetime import datetime
 import math
 import sys, os
+import time
 import torch
 from torch.nn.parallel.distributed import DistributedDataParallel as torchDDP
 from apex.optimizers import FusedAdam as Adam
@@ -492,7 +493,11 @@ def train(forward_or_varuna_step_func, model, optimizer, lr_scheduler,
         # Checkpointing
         if args.save and args.save_interval and \
            iteration % args.save_interval == 0:
+            print_rank_0("")
+            start = time.time()
             save_checkpoint(iteration, model, optimizer, lr_scheduler)
+            end = time.time()
+            print_rank_0(f"save checkpoint: {end - start}s")
 
         # Evaluation
         if (not CKPT_AND_STOP) and args.eval_interval and iteration % args.eval_interval == 0 and \
