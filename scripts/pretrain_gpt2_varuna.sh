@@ -34,7 +34,7 @@ VOCAB_FILE=/mnt/gpu-91/dataset/gpt2-vocab.json
 MERGE_FILE=/mnt/gpu-91/dataset/gpt2-merges.txt
 CHECKPOINT_PATH=/mnt/gpu-91/varuna/checkpoints/${model}
 
-rm _tmp_*
+# rm _tmp_*
 rm -rf ${CHECKPOINT_PATH}/*
 
 python3 -m varuna.run_varuna \
