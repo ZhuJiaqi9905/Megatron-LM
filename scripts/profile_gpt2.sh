@@ -2,13 +2,12 @@ DATA_PATH=/mnt/gpu-91/dataset/gpt-dataset-simplewiki/my-gpt2_text_document
 VOCAB_FILE=/mnt/gpu-91/dataset/gpt2-vocab.json
 MERGE_FILE=/mnt/gpu-91/dataset/gpt2-merges.txt
 CHECKPOINT_PATH=/mnt/gpu-91/varuna/checkpoints/${model}
-GPUS_PER_SERVER=4
 
 # NCCL_SOCKET_IFNAME=enp NCCL_DEBUG=INFO GLOO_SOCKET_IFNAME=enp216s0np0,enp94s0np0
 
-python -m varuna.run_varuna  --nstages 4 --chunk_size 1 --batch_size 8192 \
+python -m varuna.run_varuna \
         --manager_ip 172.21.0.91 \
-        --gpus_per_node $GPUS_PER_SERVER --no_morphing pretrain_gpt2.py \
+        --gpus_per_node 1 --no_morphing pretrain_gpt2.py \
         --num-layers 24 \
         --hidden-size 1024 \
         --num-attention-heads 16 \
