@@ -38,7 +38,6 @@ rm _tmp_*
 rm -rf ${CHECKPOINT_PATH}/*
 
 python3 -m varuna.run_varuna \
-       --nstages ${nstages} --chunk_size ${mbs} \
        --batch_size ${gbs} \
        --gpus_per_node ${gpus_per_node} \
        --no_morphing pretrain_gpt2.py \
