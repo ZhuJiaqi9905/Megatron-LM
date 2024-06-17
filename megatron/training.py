@@ -91,6 +91,7 @@ def pretrain(train_valid_test_dataset_provider, model_provider,
 
     # Model, optimizer, and learning rate.
     timers('model and optimizer').start()
+    print('model and optimizer')
     model, optimizer, lr_scheduler = setup_model_and_optimizer(model_provider, get_batch_fn)
     timers('model and optimizer').stop()
 
@@ -106,6 +107,7 @@ def pretrain(train_valid_test_dataset_provider, model_provider,
     timers.log(['model and optimizer', 'train/valid/test data iterators'])
     
     if args.varuna and args.profiling:
+        print('profile_all')
         profile = model.profile_all(list(range(1,25)))
         return
     
@@ -252,6 +254,7 @@ def setup_model_and_optimizer(model_provider_func, get_batch_fn):
     optimizer = get_optimizer(model)
     if args.varuna:
         if args.profiling:
+            print('profiler')
             model = profiler
         model.set_optimizer(optimizer, init_loss_scale=2**17, min_loss_scale=args.min_scale)
     lr_scheduler = get_learning_rate_scheduler(optimizer)
