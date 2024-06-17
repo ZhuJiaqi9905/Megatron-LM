@@ -1,7 +1,7 @@
 #! /bin/bash
 
 model=gpt3_350M
-nstages=4
+nstages=8
 mbs=1
 
 gbs=1024
