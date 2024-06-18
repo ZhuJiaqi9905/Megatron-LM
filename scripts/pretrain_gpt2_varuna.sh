@@ -6,6 +6,7 @@ mbs=1
 
 gbs=1024
 gpus_per_node=1
+total_gpus=16
 
 
 if [[ "${model}" == "gpt3_350M" ]]; then
@@ -39,6 +40,7 @@ rm -rf ${CHECKPOINT_PATH}/*
 
 python3 -m varuna.run_varuna \
        --batch_size ${gbs} \
+       --total_gpus ${total_gpus} \
        --gpus_per_node ${gpus_per_node} \
        --no_morphing pretrain_gpt2.py \
        --num-layers $NUM_LAYERS \
