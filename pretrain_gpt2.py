@@ -119,11 +119,12 @@ def varuna_step(data_iterator, model):
 
     # if torch.distributed.get_rank() == 0:
     #     print(inputs["input_ids"])
-    print(f'varuna prepare to get losses')
+    print(f'varuna prepare to get losses input size: {len(inputs)}')
     loss, overflow, global_norm = model.step(inputs)
     loss = torch.Tensor([loss]).cuda()
     # Reduce loss for logging.
     # reduced_loss = reduce_losses([loss])
+    print(f'varuna finish a step')
 
     return loss, {'lm loss': loss}, overflow, global_norm
 

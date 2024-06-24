@@ -325,25 +325,25 @@ def train_step(forward_or_varuna_step_func, data_iterator,
     
     print(f'enter train_step')
 
-    if not args.varuna:
-        forward_step_func = forward_or_varuna_step_func
-        # Forward model for one step.
-        timers('forward').start()
-        loss, loss_reduced = forward_step_func(data_iterator, model)
-        timers('forward').stop()
+    # if not args.varuna:
+    forward_step_func = forward_or_varuna_step_func
+    # Forward model for one step.
+    timers('forward').start()
+    loss, loss_reduced = forward_step_func(data_iterator, model)
+    timers('forward').stop()
 
-        # Calculate gradients, reduce across processes, and clip.
-        timers('backward').start()
-        backward_step(optimizer, model, loss)
-        timers('backward').stop()
-        overflow = False
-        global_norm = -1
-    else:
-        # timers('varuna')
-        varuna_step_func = forward_or_varuna_step_func
-        loss, loss_reduced, overflow, global_norm = \
-                varuna_step_func(data_iterator, model)
-        print(f'finish varuna_step_func')
+    # Calculate gradients, reduce across processes, and clip.
+    timers('backward').start()
+    backward_step(optimizer, model, loss)
+    timers('backward').stop()
+    overflow = False
+    global_norm = -1
+    # else:
+    #     # timers('varuna')
+    #     varuna_step_func = forward_or_varuna_step_func
+    #     loss, loss_reduced, overflow, global_norm = \
+    #             varuna_step_func(data_iterator, model)
+    #     print(f'finish varuna_step_func')
   
     # Update parameters.
     timers('optimizer').start()
