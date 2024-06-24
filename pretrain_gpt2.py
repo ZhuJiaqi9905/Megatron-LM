@@ -88,11 +88,13 @@ def forward_step(data_iterator, model):
     timers = get_timers()
 
     # Get the batch.
+    print(f'prepare to get batch')
     timers('batch generator').start()
     tokens, labels, loss_mask, attention_mask, position_ids = get_batch(
         data_iterator)
     timers('batch generator').stop()
     # Forward model.
+    print(f'prepare to get losses')
     losses = model(tokens, position_ids, attention_mask, labels=labels)
     loss_mask = loss_mask.view(-1)
     loss = torch.sum(losses.view(-1) * loss_mask) / loss_mask.sum()
@@ -108,12 +110,16 @@ def varuna_step(data_iterator, model):
     timers = get_timers()
 
     # Get the batch.
+    print(f'varuna prepare to get batch')
     timers('batch generator').start()
     inputs = get_batch(data_iterator)
     timers('batch generator').stop()
+    
+    print('enter varuna_step')
 
     # if torch.distributed.get_rank() == 0:
     #     print(inputs["input_ids"])
+    print(f'varuna prepare to get losses')
     loss, overflow, global_norm = model.step(inputs)
     loss = torch.Tensor([loss]).cuda()
     # Reduce loss for logging.

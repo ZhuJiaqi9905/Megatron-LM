@@ -40,7 +40,7 @@ rm -rf ${CHECKPOINT_PATH}/*
 
 export GLOO_SOCKET_IFNAME=enp216s0np0,enp94s0np0 && \
 python3 -m varuna.run_varuna \
-       --nstages 4 --chunk_size 1 \
+       --nstages 8 --chunk_size 2 \
        --manager_ip 172.21.0.91 \
        --batch_size ${gbs} \
        --total_gpus ${total_gpus} \
@@ -49,8 +49,8 @@ python3 -m varuna.run_varuna \
        --num-layers $NUM_LAYERS \
        --hidden-size $HIDDEN_SIZE \
        --num-attention-heads $NUM_ATTENTION_HEADS \
-       --seq-length 512 \
-       --max-position-embeddings 512 \
+       --seq-length 2048 \
+       --max-position-embeddings 2048 \
        --train-iters 18750 \
        --lr-decay-iters 18750 \
        --save ${CHECKPOINT_PATH} \

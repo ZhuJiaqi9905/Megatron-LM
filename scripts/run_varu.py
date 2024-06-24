@@ -33,14 +33,19 @@ def generate_available_machines(number):
             if machines >= number:
                 break
 
+def kill_all():
+    output = local.run_command('cd ' + meg_project_dir + ' && bash ./script/kill_all.sh')
+    local.wait_finished(output)
+
 def cp_log(number):
     output = local.run_command('cd ' + meg_project_dir + ' && cp -r ssh_logs ssh_logs_' + str(number))
     local.wait_finished(output)
 
 def run_test(number):
     print(f'run test {number} nodes')
+    kill_all()
     generate_available_machines(number)
-    output = local.run_command('cd ' + meg_project_dir + ' && ./scripts/profile_gpt2.sh')
+    output = local.run_command('cd ' + meg_project_dir + ' && bash ./scripts/profile_gpt2.sh')
     for line in output.stdout:
         print(line)
     for line in output.stderr:
@@ -51,10 +56,11 @@ def run_test(number):
     for line in output.stderr:
         print(line)
     print('finish profile')
-    output = local.run_command('cd ' + meg_project_dir + ' && ./scripts/pretrain_gpt2_varuna.sh')
+    kill_all()
+    output = local.run_command('cd ' + meg_project_dir + ' && bash ./scripts/pretrain_gpt2_varuna.sh')
     time.sleep(60 * 5)
     print('time to kill')
-    kill_output = local.run_command('cd ' + meg_project_dir + ' && ./scripts/kill_all.sh')
+    kill_output = local.run_command('cd ' + meg_project_dir + ' && bash ./scripts/kill_all.sh')
     local.wait_finished(kill_output)
     for line in kill_output.stdout:
         print(line)

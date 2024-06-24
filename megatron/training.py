@@ -322,6 +322,8 @@ def train_step(forward_or_varuna_step_func, data_iterator,
     """Single training step."""
     args = get_args()
     timers = get_timers()
+    
+    print(f'enter train_step')
 
     if not args.varuna:
         forward_step_func = forward_or_varuna_step_func
@@ -341,12 +343,14 @@ def train_step(forward_or_varuna_step_func, data_iterator,
         varuna_step_func = forward_or_varuna_step_func
         loss, loss_reduced, overflow, global_norm = \
                 varuna_step_func(data_iterator, model)
+        print(f'finish varuna_step_func')
   
     # Update parameters.
     timers('optimizer').start()
     if not overflow:  
         optimizer.step()
     model.zero_grad()
+    print(f'finish zero_grad')
     
     overflow = optimizer.overflow if (args.fp16 and not args.varuna) else overflow
     timers('optimizer').stop()
@@ -470,6 +474,8 @@ def train(forward_or_varuna_step_func, model, optimizer, lr_scheduler,
     timers('interval time').start()
     report_memory_flag = True
     while iteration < args.train_iters:
+        print(f'iteration: {iteration}')
+        
         loss_dict, skipped_iter = train_step(forward_or_varuna_step_func,
                                              train_data_iterator,
                                              model,
