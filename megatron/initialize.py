@@ -39,6 +39,7 @@ def initialize_megatron(extra_args_provider=None, args_defaults={},
     (optionally, only when args.lazy_mpu_init == True)
 
 """
+    print("enter initialize_megatron")
     if not allow_no_cuda:
         # Make sure cuda is available.
         assert torch.cuda.is_available(), 'Megatron requires CUDA.'
@@ -48,10 +49,12 @@ def initialize_megatron(extra_args_provider=None, args_defaults={},
     set_global_variables(extra_args_provider=extra_args_provider,
                          args_defaults=args_defaults,
                          ignore_unknown_args=ignore_unknown_args)
+    print("finish set_global_variables")
 
     # torch.distributed initialization
     def finish_mpu_init():
         args = get_args()
+        print(f"rank: {args.rank}") 
         # Pytorch distributed.
         _initialize_distributed()
         
@@ -61,26 +64,32 @@ def initialize_megatron(extra_args_provider=None, args_defaults={},
         _set_random_seed(args.seed)
 
     args = get_args()
+    print(f'args.lazy_mpu_init')
     if  args.lazy_mpu_init:
         args.use_cpu_initialization=True
         # delayed initialization of DDP-related stuff
         # We only set basic DDP globals    
         set_model_parallel_world_size(args.model_parallel_size)
         # and return function for external DDP manager to call when it has DDP initialized
-        set_model_parallel_rank(args.rank)    
+        set_model_parallel_rank(args.rank)
+        print("finish lazy_mpu_init")
         return finish_mpu_init
     else:
         # Megatron's MPU is the master. Complete initialization right away.
         finish_mpu_init()
+        print("finish finish_mpu_init")
 
         # Initialize memory buffers.
         _initialize_mem_buffs()
+        print("finish _initialize_mem_buffs")
         
         # Autoresume.
         _init_autoresume()
+        print("finish _init_autoresume")
         
         # Write arguments to tensorboard.
         _write_args_to_tensorboard()
+        print("finish _write_args_to_tensorboard")
         # No continuation function
         return None
         
@@ -88,6 +97,8 @@ def initialize_megatron(extra_args_provider=None, args_defaults={},
 def _initialize_distributed():
     """Initialize torch.distributed and mpu."""
     args = get_args()
+    
+    print('enter _initialize_distributed')
 
     device_count = torch.cuda.device_count()
     if torch.distributed.is_initialized():
@@ -116,10 +127,13 @@ def _initialize_distributed():
         master_ip = os.getenv('MASTER_ADDR', 'localhost')
         master_port = os.getenv('MASTER_PORT', '6000')
         init_method += master_ip + ':' + master_port
+        print(f'init_method {init_method}')
+        print(f'{args.rank}')
         torch.distributed.init_process_group(
             backend=args.distributed_backend,
             world_size=args.world_size, rank=args.rank,
             init_method=init_method)
+        print(f'finish init_process_group')
 
     # Set the model-parallel / data-parallel communicators.
     if device_count > 0:

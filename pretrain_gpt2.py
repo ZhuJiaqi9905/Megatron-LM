@@ -158,7 +158,7 @@ def train_valid_test_datasets_provider(train_val_test_num_samples):
 
 
 if __name__ == "__main__":
-
+    print("hit main")
     
     def handler(signum,_):
         print(torch.distributed.get_rank(), 'signal handler called with signal', signum)

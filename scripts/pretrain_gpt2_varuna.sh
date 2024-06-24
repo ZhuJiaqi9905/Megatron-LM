@@ -39,6 +39,7 @@ CHECKPOINT_PATH=/mnt/gpu-91/varuna/checkpoints/${model}
 rm -rf ${CHECKPOINT_PATH}/*
 
 python3 -m varuna.run_varuna \
+       --nstages 2 --chunk_size 1 \
        --batch_size ${gbs} \
        --total_gpus ${total_gpus} \
        --gpus_per_node ${gpus_per_node} \

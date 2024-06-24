@@ -76,10 +76,13 @@ def pretrain(train_valid_test_dataset_provider, model_provider,
         args_defaults: a dictionary from argument-name to argument-value. It
             to set already parse arguments.
     """
+    print('enter pretrain')
 
     # Initalize and get arguments, timers, and Tensorboard writer.
     initialize_megatron(extra_args_provider=extra_args_provider,
                         args_defaults=args_defaults)
+
+    print('finish initialize_megatron')
 
     args = get_args()
     timers = get_timers()
