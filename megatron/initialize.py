@@ -130,7 +130,7 @@ def _initialize_distributed():
         print(f'init_method {init_method}')
         print(f'{args.rank}')
         torch.distributed.init_process_group(
-            backend=args.distributed_backend,
+            backend='gloo',
             world_size=args.world_size, rank=args.rank,
             init_method=init_method)
         print(f'finish init_process_group')

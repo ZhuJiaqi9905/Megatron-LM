@@ -38,9 +38,10 @@ CHECKPOINT_PATH=/mnt/gpu-91/varuna/checkpoints/${model}
 # rm _tmp_*
 rm -rf ${CHECKPOINT_PATH}/*
 
-export GLOO_SOCKET_IFNAME=enp216s0np0 && \
+export GLOO_SOCKET_IFNAME=enp216s0np0,enp94s0np0 && \
 python3 -m varuna.run_varuna \
-       --nstages 2 --chunk_size 1 \
+       --nstages 4 --chunk_size 1 \
+       --manager_ip 172.21.0.91 \
        --batch_size ${gbs} \
        --total_gpus ${total_gpus} \
        --gpus_per_node ${gpus_per_node} \
