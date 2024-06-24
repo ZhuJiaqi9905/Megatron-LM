@@ -132,7 +132,7 @@ def _initialize_distributed():
         torch.distributed.init_process_group(
             backend='gloo',
             world_size=args.world_size, rank=args.rank,
-            init_method=init_method)
+            init_method='tcp://172.21.0.91:29500')
         print(f'finish init_process_group')
 
     # Set the model-parallel / data-parallel communicators.
