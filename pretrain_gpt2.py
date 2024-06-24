@@ -29,6 +29,17 @@ from megatron.utils import get_ltor_masks_and_position_ids
 from megatron.utils import reduce_losses
 
 import signal
+import inspect
+
+
+# 获取函数定义的文件
+def print_function_file(func):
+    try:
+        file_path = inspect.getfile(func)
+        source_lines, starting_line_no = inspect.getsourcelines(func)
+        print(f"The function '{func.__name__}' is defined in: {file_path} at line {starting_line_no}")
+    except TypeError:
+        print("The provided object is not a function.")
 
 def model_provider():
     """Build the model."""
@@ -120,12 +131,13 @@ def varuna_step(data_iterator, model):
     # if torch.distributed.get_rank() == 0:
     #     print(inputs["input_ids"])
     print(f'varuna prepare to get losses input size: {len(inputs)}')
+    print_function_file(model.step)
     loss, overflow, global_norm = model.step(inputs)
     loss = torch.Tensor([loss]).cuda()
     # Reduce loss for logging.
     # reduced_loss = reduce_losses([loss])
     print(f'varuna finish a step')
-
+    
     return loss, {'lm loss': loss}, overflow, global_norm
 
 def varuna_evaluate(data_iterator, model):
