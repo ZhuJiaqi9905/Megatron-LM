@@ -1,8 +1,8 @@
 #! /bin/bash
 
-model=gpt3_350M
-nstages=8
-mbs=1
+model={$1:-gpt3_350M}
+nstages={$2:-4}
+mbs={$3:-4}
 
 gbs=1024
 gpus_per_node=1
@@ -40,7 +40,7 @@ rm -rf ${CHECKPOINT_PATH}/*
 
 export GLOO_SOCKET_IFNAME=enp216s0np0,enp94s0np0 && \
 python3 -m varuna.run_varuna \
-       --nstages 8 --chunk_size 2 \
+       --nstages ${nstages} --chunk_size ${mbs} \
        --manager_ip 172.21.0.91 \
        --batch_size ${gbs} \
        --total_gpus ${total_gpus} \

@@ -13,6 +13,9 @@ varu_project_dir = '/workspace/varuna'
 user = 'root'
 pkey = '/root/.ssh/id_rsa'
 
+models = ['gpt3_350M', 'gpt3_1_3B', 'gpt3_2_7B']
+nstages = {24: 8, 22: 11, 20: 5, 18: 6, 16: 4, 14: 7, 12: 6, 10: 5, 8: 4} # nodes: nstages
+
 clients = []
 for host in hosts:
     for port in ports:
@@ -37,27 +40,35 @@ def kill_all():
     output = local.run_command('cd ' + meg_project_dir + ' && bash ./script/kill_all.sh')
     local.wait_finished(output)
 
-def cp_log(number):
-    output = local.run_command('cd ' + meg_project_dir + ' && cp -r ssh_logs ssh_logs_' + str(number))
+def cp_log(number, model):
+    output = local.run_command('cd ' + meg_project_dir + ' && cp -r ssh_logs ssh_logs_' + str(number) + '_' + model)
     local.wait_finished(output)
 
-def run_test(number):
-    print(f'run test {number} nodes')
+def rm_tmp():
+    outputs = []
+    for client in clients:
+        outputs.append(client.run_command('rm -f /tmp/_tmp_*'))
+    for idx, client in clients:
+        client.wait_finished(outputs[idx])
+
+def run_test(number, model_i):
+    print(f'run {models[model_i]} test {number} nodes')
     kill_all()
+    rm_tmp()
     generate_available_machines(number)
-    output = local.run_command('cd ' + meg_project_dir + ' && bash ./scripts/profile_gpt2.sh')
-    for line in output.stdout:
-        print(line)
-    for line in output.stderr:
-        print(line)
-    local.wait_finished(output)
-    for line in output.stdout:
-        print(line)
-    for line in output.stderr:
-        print(line)
-    print('finish profile')
-    kill_all()
-    output = local.run_command('cd ' + meg_project_dir + ' && bash ./scripts/pretrain_gpt2_varuna.sh')
+    # output = local.run_command('cd ' + meg_project_dir + ' && bash ./scripts/profile_gpt2.sh')
+    # for line in output.stdout:
+    #     print(line)
+    # for line in output.stderr:
+    #     print(line)
+    # local.wait_finished(output)
+    # for line in output.stdout:
+    #     print(line)
+    # for line in output.stderr:
+    #     print(line)
+    # print('finish profile')
+    # kill_all()
+    output = local.run_command('cd ' + meg_project_dir + ' && bash ./scripts/pretrain_gpt2_varuna.sh ' + models[model_i] + ' ' + str(nstages[number]))
     time.sleep(60 * 5)
     print('time to kill')
     kill_output = local.run_command('cd ' + meg_project_dir + ' && bash ./scripts/kill_all.sh')
@@ -68,9 +79,10 @@ def run_test(number):
         print(line)
     local.wait_finished(output)
     print('finish pretrain')
-    cp_log(number)
+    cp_log(number, models[model_i])
 
-run_test(16)
+# run_test(16, 0)
 
-# for i in range(8, 24, 2):
-#     run_test(i)
+for model_i in range(models):
+    for i in range(8, 24, 2):
+        run_test(i, model_i)

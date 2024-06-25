@@ -6,6 +6,7 @@ dist/
 *.egg-info/
 _tmp*
 ssh_logs/
+ssh_logs*
 varuna_current_machines
 megatron/data/helpers.cpython-36m-x86_64-linux-gnu.so
 profiles/
