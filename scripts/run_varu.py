@@ -51,7 +51,7 @@ def cp_log(number, model):
 def rm_tmp():
     outputs = []
     for idx, client in enumerate(clients):
-        outputs.append(client.run_command(f'rm -f /tmp/{idx}'))
+        outputs.append(client.run_command(f'rm -f /mnt/gpu-91/varuna/profile_rank_{idx}'))
     for idx, client in enumerate(clients):
         client.wait_finished(outputs[idx])
 

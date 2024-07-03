@@ -4,35 +4,26 @@ import math
 import signal
 import sys
 
-hosts = [91, 90, 92, 46, 42, 47]
-for idx, host_suffix in enumerate(hosts):
-    hosts[idx] = '172.21.0.' + str(host_suffix)
-ports = [2230 + i for i in range(4)]
+hosts = []
+ports = []
+with open('available_machines.out', 'r') as f:
+    for line in f.readlines():
+        hosts.append(line.split(':')[0])
+        ports.append(int(line.split(':')[1]))
+
 meg_project_dir = '/workspace/Megatron-LM-varuna'
 varu_project_dir = '/workspace/varuna'
 user = 'root'
 pkey = '/root/.ssh/id_rsa'
 
 clients = []
-for host in hosts:
-    for port in ports:
-        print(host, port)
-        clients.append(SSHClient(host=host, port=port, user=user, pkey=pkey))
+for idx in range(len(hosts)):
+    print(hosts[idx], ports[idx])
+    clients.append(SSHClient(host=hosts[idx], port=ports[idx], user=user, pkey=pkey))
 
-
-for port in range(len(ports)):
-    outputs = []
-    local_clients = []
+for idx in range(len(hosts)):
     print("==============================")
-    print(port)
+    print(hosts[idx], ports[idx], f'rm -rf /mnt/gpu-91/varuna/profile_rank_{idx}')
     print("==============================")
-    for host in range(len(hosts)):
-        outputs.append(clients[host * len(ports) + port].run_command(f'rm /tmp/{host}'))
-        local_clients.append(clients[host * len(ports) + port])
-    for idx, output in enumerate(outputs):
-        print(idx)
-        local_clients[idx].wait_finished(output)
-        for line in output.stdout:
-            print(line)
-        for line in output.stderr:
-            print(line)
+    output = clients[idx].run_command(f'rm -rf /mnt/gpu-91/varuna/profile_rank_{idx}')
+    clients[idx].wait_finished(output)
