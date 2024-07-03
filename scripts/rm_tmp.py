@@ -27,7 +27,7 @@ for port in range(len(ports)):
     print(port)
     print("==============================")
     for host in range(len(hosts)):
-        outputs.append(clients[host * len(ports) + port].run_command('rm /tmp/*'))
+        outputs.append(clients[host * len(ports) + port].run_command(f'rm /tmp/{host}'))
         local_clients.append(clients[host * len(ports) + port])
     for idx, output in enumerate(outputs):
         print(idx)
