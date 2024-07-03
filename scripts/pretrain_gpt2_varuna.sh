@@ -1,8 +1,8 @@
 #! /bin/bash
 
-model={$1:-gpt3_350M}
-nstages={$2:-4}
-mbs={$3:-4}
+model=${1:-"gpt3_350M"}
+nstages=${2:-4}
+mbs=${3:-2}
 
 gbs=1024
 gpus_per_node=1
@@ -38,7 +38,7 @@ CHECKPOINT_PATH=/mnt/gpu-91/varuna/checkpoints/${model}
 # rm _tmp_*
 rm -rf ${CHECKPOINT_PATH}/*
 
-export GLOO_SOCKET_IFNAME=enp216s0np0,enp94s0np0 && \
+export GLOO_SOCKET_IFNAME=enp216s0np0 && \
 python3 -m varuna.run_varuna \
        --nstages ${nstages} --chunk_size ${mbs} \
        --manager_ip 172.21.0.91 \
@@ -68,7 +68,7 @@ python3 -m varuna.run_varuna \
        --warmup .01 \
        --log-interval 1 \
        --exit-interval 100 \
-       --save-interval 5 \
+       --save-interval 10000 \
        --eval-interval 1000 \
        --use-cpu-initialization \
        --eval-iters 5 \

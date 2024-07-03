@@ -1,6 +1,6 @@
 #! /bin/bash
 
-model=gpt3_1_3B
+model=gpt3_350M
 
 DATA_PATH=/mnt/gpu-91/dataset/gpt-dataset-simplewiki/my-gpt2_text_document
 VOCAB_FILE=/mnt/gpu-91/dataset/gpt2-vocab.json
@@ -28,17 +28,19 @@ else
        exit -1
 fi
 
+python scripts/rm_tmp.py
+
 # NCCL_SOCKET_IFNAME=enp NCCL_DEBUG=INFO GLOO_SOCKET_IFNAME=enp216s0np0,enp94s0np0
 
-export GLOO_SOCKET_IFNAME=enp216s0np0,enp94s0np0 && \
+export GLOO_SOCKET_IFNAME=enp216s0np0 && \
 python -m varuna.run_varuna --nstages 4 --chunk_size 1 --batch_size 1024 \
         --manager_ip 172.21.0.91 \
         --gpus_per_node 1 --no_morphing pretrain_gpt2.py \
         --num-layers ${NUM_LAYERS} \
         --hidden-size ${HIDDEN_SIZE} \
         --num-attention-heads ${NUM_ATTENTION_HEADS} \
-        --seq-length 1024 \
-        --max-position-embeddings 1024 \
+        --seq-length 2048 \
+        --max-position-embeddings 2048 \
         --train-iters 100 \
         --lr-decay-iters 100 \
         --data-path $DATA_PATH \

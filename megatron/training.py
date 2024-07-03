@@ -151,9 +151,11 @@ def get_model(model_provider_func, get_batch_fn=None):
         shared_weights = [("language_model.embedding.word_embeddings.weight","lm_head_weight")]
 
         if args.profiling:
+            print("is profiling")
             profiler = Profiler(model, get_batch_fn, fp16=args.fp16, device = args.local_rank,
                         from_cache=True, out_folder=args.save, add_to_existing=True)
         else:
+            print("not profiling")
             pipeline_parallel_size, data_parallel_size = get_varuna_config(args.stage_to_rank_map)
             args.partitions = pipeline_parallel_size
             global_batch_size = args.batch_size * data_parallel_size

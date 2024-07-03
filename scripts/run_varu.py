@@ -37,25 +37,33 @@ def generate_available_machines(number):
                 break
 
 def kill_all():
-    output = local.run_command('cd ' + meg_project_dir + ' && bash ./script/kill_all.sh')
+    output = local.run_command('cd ' + meg_project_dir + ' && bash ./scripts/kill_all.sh')
     local.wait_finished(output)
+    for line in output.stdout:
+        print(line)
+    for line in output.stderr:
+        print(line)
 
 def cp_log(number, model):
-    output = local.run_command('cd ' + meg_project_dir + ' && cp -r ssh_logs ssh_logs_' + str(number) + '_' + model)
+    output = local.run_command('cd ' + meg_project_dir + ' && rm -rf ssh_logs_' + str(number) + '_' + model + ' && cp -r ssh_logs ssh_logs_' + str(number) + '_' + model)
     local.wait_finished(output)
 
 def rm_tmp():
     outputs = []
     for client in clients:
         outputs.append(client.run_command('rm -f /tmp/_tmp_*'))
-    for idx, client in clients:
+    for idx, client in enumerate(clients):
         client.wait_finished(outputs[idx])
 
 def run_test(number, model_i):
     print(f'run {models[model_i]} test {number} nodes')
     kill_all()
+    print('kill all')
+    time.sleep(5)
     rm_tmp()
+    print('rm tmp')
     generate_available_machines(number)
+    print('finish generate_available_machines')
     # output = local.run_command('cd ' + meg_project_dir + ' && bash ./scripts/profile_gpt2.sh')
     # for line in output.stdout:
     #     print(line)
@@ -69,20 +77,15 @@ def run_test(number, model_i):
     # print('finish profile')
     # kill_all()
     output = local.run_command('cd ' + meg_project_dir + ' && bash ./scripts/pretrain_gpt2_varuna.sh ' + models[model_i] + ' ' + str(nstages[number]))
+    print('time to sleep')
     time.sleep(60 * 5)
     print('time to kill')
-    kill_output = local.run_command('cd ' + meg_project_dir + ' && bash ./scripts/kill_all.sh')
-    local.wait_finished(kill_output)
-    for line in kill_output.stdout:
-        print(line)
-    for line in kill_output.stderr:
-        print(line)
-    local.wait_finished(output)
+    kill_all()
     print('finish pretrain')
     cp_log(number, models[model_i])
 
-# run_test(16, 0)
+# run_test(24, 0)
 
-for model_i in range(models):
+for model_i in range(len(models)):
     for i in range(8, 24, 2):
         run_test(i, model_i)
