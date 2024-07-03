@@ -29,6 +29,9 @@ else
 fi
 
 python scripts/rm_tmp.py
+mkdir -p /mnt/gpu-91/varuna/profiles
+chmod 777 /mnt/gpu-91/varuna/profiles
+rm /mnt/gpu-91/varuna/profiles/*
 
 # NCCL_SOCKET_IFNAME=enp NCCL_DEBUG=INFO GLOO_SOCKET_IFNAME=enp216s0np0,enp94s0np0
 

@@ -51,7 +51,7 @@ def cp_log(number, model):
 def rm_tmp():
     outputs = []
     for client in clients:
-        outputs.append(client.run_command('rm -f /tmp/_tmp_*'))
+        outputs.append(client.run_command('rm -f /tmp/*'))
     for idx, client in enumerate(clients):
         client.wait_finished(outputs[idx])
 

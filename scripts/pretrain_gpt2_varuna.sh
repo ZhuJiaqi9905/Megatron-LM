@@ -40,7 +40,6 @@ rm -rf ${CHECKPOINT_PATH}/*
 
 export GLOO_SOCKET_IFNAME=enp216s0np0 && \
 python3 -m varuna.run_varuna \
-       --nstages ${nstages} --chunk_size ${mbs} \
        --manager_ip 172.21.0.91 \
        --batch_size ${gbs} \
        --total_gpus ${total_gpus} \
