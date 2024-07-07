@@ -4,7 +4,7 @@ import math
 import signal
 import sys, os, time
 
-hosts = [91, 90, 92, 46, 42, 47]
+hosts = [91, 90, 92, 42]
 for idx, host_suffix in enumerate(hosts):
     hosts[idx] = '172.21.0.' + str(host_suffix)
 ports = [2230 + i for i in range(4)]
@@ -49,34 +49,29 @@ def cp_log(number, model):
     local.wait_finished(output)
 
 def rm_tmp():
-    outputs = []
-    for idx, client in enumerate(clients):
-        outputs.append(client.run_command(f'rm -f /mnt/gpu-91/varuna/profile_rank_{idx}'))
-    for idx, client in enumerate(clients):
-        client.wait_finished(outputs[idx])
+    output = local.run_command(f'rm -f /mnt/gpu-91/varuna/profile*')
+    local.wait_finished(output)
 
 def run_test(number, model_i):
     print(f'run {models[model_i]} test {number} nodes')
     kill_all()
     print('kill all')
     time.sleep(5)
-    rm_tmp()
-    print('rm tmp')
     generate_available_machines(number)
     print('finish generate_available_machines')
-    # output = local.run_command('cd ' + meg_project_dir + ' && bash ./scripts/profile_gpt2.sh')
-    # for line in output.stdout:
-    #     print(line)
-    # for line in output.stderr:
-    #     print(line)
-    # local.wait_finished(output)
-    # for line in output.stdout:
-    #     print(line)
-    # for line in output.stderr:
-    #     print(line)
-    # print('finish profile')
-    # kill_all()
-    output = local.run_command('cd ' + meg_project_dir + ' && bash ./scripts/pretrain_gpt2_varuna.sh ' + models[model_i] + ' ' + str(nstages[number]))
+    output = local.run_command('cd ' + meg_project_dir + ' && bash ./scripts/profile_gpt2.sh')
+    for line in output.stdout:
+        print(line)
+    for line in output.stderr:
+        print(line)
+    local.wait_finished(output)
+    for line in output.stdout:
+        print(line)
+    for line in output.stderr:
+        print(line)
+    print('finish profile')
+    kill_all()
+    output = local.run_command('cd ' + meg_project_dir + ' && bash ./scripts/pretrain_gpt2_varuna.sh ' + models[model_i])
     print('time to sleep')
     time.sleep(60 * 5)
     print('time to kill')
@@ -84,8 +79,8 @@ def run_test(number, model_i):
     print('finish pretrain')
     cp_log(number, models[model_i])
 
-# run_test(24, 0)
+# run_test(9, 0)
 
 for model_i in range(len(models)):
-    for i in range(8, 24, 2):
+    for i in range(8, 16, 2):
         run_test(i, model_i)

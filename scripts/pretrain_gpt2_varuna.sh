@@ -48,8 +48,8 @@ python3 -m varuna.run_varuna \
        --num-layers $NUM_LAYERS \
        --hidden-size $HIDDEN_SIZE \
        --num-attention-heads $NUM_ATTENTION_HEADS \
-       --seq-length 2048 \
-       --max-position-embeddings 2048 \
+       --seq-length 1024 \
+       --max-position-embeddings 1024 \
        --train-iters 18750 \
        --lr-decay-iters 18750 \
        --save ${CHECKPOINT_PATH} \
@@ -71,7 +71,7 @@ python3 -m varuna.run_varuna \
        --eval-interval 1000 \
        --use-cpu-initialization \
        --eval-iters 5 \
-       --varuna --fp16 \
+       --varuna --fp16 --fp16-lm-cross-entropy \
        # --load ${CHECKPOINT_PATH} \
 
 set +x

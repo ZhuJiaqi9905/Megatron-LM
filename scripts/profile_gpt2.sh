@@ -36,14 +36,14 @@ rm /mnt/gpu-91/varuna/profiles/*
 # NCCL_SOCKET_IFNAME=enp NCCL_DEBUG=INFO GLOO_SOCKET_IFNAME=enp216s0np0,enp94s0np0
 
 export GLOO_SOCKET_IFNAME=enp216s0np0 && \
-python -m varuna.run_varuna --nstages 4 --chunk_size 1 --batch_size 1024 \
+python -m varuna.run_varuna --nstages 1 --chunk_size 1 --batch_size 1024 \
         --manager_ip 172.21.0.91 \
         --gpus_per_node 1 --no_morphing pretrain_gpt2.py \
         --num-layers ${NUM_LAYERS} \
         --hidden-size ${HIDDEN_SIZE} \
         --num-attention-heads ${NUM_ATTENTION_HEADS} \
-        --seq-length 2048 \
-        --max-position-embeddings 2048 \
+        --seq-length 1024 \
+        --max-position-embeddings 1024 \
         --train-iters 100 \
         --lr-decay-iters 100 \
         --data-path $DATA_PATH \
@@ -54,14 +54,14 @@ python -m varuna.run_varuna --nstages 4 --chunk_size 1 --batch_size 1024 \
         --save-interval 1000 \
         --data-impl mmap \
         --split 949,50,1 \
-        --lr 0.00001 \
-        --min-lr 1e-5 \
+        --distributed-backend gloo \
+        --lr 0.00015 \
+        --min-lr 1.0e-5 \
         --lr-decay-style cosine \
         --weight-decay 1e-2 \
         --clip-grad 1.0 \
+        --warmup .01 \
         --use-cpu-initialization \
-        --warmup .05 \
-        --fp16 \
-        --varuna \
+        --varuna --fp16 --fp16-lm-cross-entropy \
         --profiling
 

@@ -15,6 +15,7 @@
 
 """GPT-2 model."""
 
+import gc
 import torch
 
 from megatron import get_args
@@ -81,6 +82,9 @@ class GPT2Model(MegatronModule):
 
         if get_key_value:
             output = [output, presents]
+            
+        gc.collect()
+        torch.cuda.empty_cache()
 
         if labels is None:
             return output
