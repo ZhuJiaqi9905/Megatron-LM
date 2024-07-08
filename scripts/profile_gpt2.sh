@@ -1,6 +1,6 @@
 #! /bin/bash
 
-model=gpt3_350M
+model=${1:-"gpt3_350M"}
 
 DATA_PATH=/mnt/gpu-91/dataset/gpt-dataset-simplewiki/my-gpt2_text_document
 VOCAB_FILE=/mnt/gpu-91/dataset/gpt2-vocab.json
@@ -62,6 +62,6 @@ python -m varuna.run_varuna --nstages 1 --chunk_size 1 --batch_size 1024 \
         --clip-grad 1.0 \
         --warmup .01 \
         --use-cpu-initialization \
-        --varuna --fp16 --fp16-lm-cross-entropy \
+        --varuna --fp16 \
         --profiling
 

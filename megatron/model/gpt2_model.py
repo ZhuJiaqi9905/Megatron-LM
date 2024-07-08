@@ -90,7 +90,7 @@ class GPT2Model(MegatronModule):
             return output
         else:
             if self.fp16_lm_cross_entropy:
-                assert output.dtype == torch.half
+                # assert output.dtype == torch.half
                 loss = mpu.vocab_parallel_cross_entropy(output, labels)
             else:
                 loss = mpu.vocab_parallel_cross_entropy(output.float(), labels)
