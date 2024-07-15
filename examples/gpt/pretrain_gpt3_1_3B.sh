@@ -2,6 +2,7 @@
 
 export CUDA_DEVICE_MAX_CONNECTIONS=1
 export NCCL_SOCKET_IFNAME=enp
+export GLOO_SOCKET_IFNAME=enp216s0np0
 GPUS_PER_NODE=4
 export NCCL_DEBUG=INFO
 # Change for multinode config
@@ -11,10 +12,15 @@ NNODES=3
 NODE_RANK=${1}
 WORLD_SIZE=$(($GPUS_PER_NODE*$NNODES))
 
-CHECKPOINT_PATH=/workspace/python/Megatron-LM/data/checkpoint/gpt3_1_3B/
-VOCAB_FILE=/workspace/python/Megatron-LM/dataset/gpt2-vocab.json
-MERGE_FILE=/workspace/python/Megatron-LM/dataset/gpt2-merges.txt
-DATA_PATH=/workspace/python/Megatron-LM/dataset/gpt-dataset-simplewiki/my-gpt2_text_document
+# CHECKPOINT_PATH=/workspace/python/Megatron-LM/data/checkpoint/gpt3_1_3B/
+# VOCAB_FILE=/workspace/python/Megatron-LM/dataset/gpt2-vocab.json
+# MERGE_FILE=/workspace/python/Megatron-LM/dataset/gpt2-merges.txt
+# DATA_PATH=/workspace/python/Megatron-LM/dataset/gpt-dataset-simplewiki/my-gpt2_text_document
+
+DATA_PATH=/mnt/gpu-91/dataset/gpt-dataset-simplewiki/my-gpt2_text_document
+VOCAB_FILE=/mnt/gpu-91/dataset/gpt2-vocab.json
+MERGE_FILE=/mnt/gpu-91/dataset/gpt2-merges.txt
+CHECKPOINT_PATH=/mnt/gpu-91/megatron-lm/checkpoints/gpt3_1_3B/
 
 
 DISTRIBUTED_ARGS="
@@ -35,7 +41,7 @@ GPT_ARGS="
     --seq-length 2048 \
     --max-position-embeddings 2048 \
     --micro-batch-size 1 \
-    --global-batch-size 1024 \
+    --global-batch-size 300 \
     --lr 0.00015 \
     --train-iters 500000 \
     --lr-decay-iters 320000 \

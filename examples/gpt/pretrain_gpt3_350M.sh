@@ -2,12 +2,12 @@
 
 export CUDA_DEVICE_MAX_CONNECTIONS=1
 export NCCL_SOCKET_IFNAME=enp
-export NCCL_DEBUG=INFO
+# export NCCL_DEBUG=INFO
 GPUS_PER_NODE=4
 # Change for multinode config
-MASTER_ADDR=172.21.0.42
+MASTER_ADDR=172.21.0.91
 MASTER_PORT=6000
-NNODES=4
+NNODES=1
 NODE_RANK=${1}
 WORLD_SIZE=$(($GPUS_PER_NODE*$NNODES))
 
@@ -26,7 +26,7 @@ DISTRIBUTED_ARGS="
 "
 
 GPT_ARGS="
-    --tensor-model-parallel-size 2 \
+    --tensor-model-parallel-size 1 \
     --pipeline-model-parallel-size 2 \
     --sequence-parallel \
     --num-layers 24 \
@@ -54,7 +54,7 @@ DATA_ARGS="
     --merge-file $MERGE_FILE \
     "
     # --split 949,50,1
-DATA_ARGS="--mock-data     --vocab-file $VOCAB_FILE  --merge-file $MERGE_FILE"
+DATA_ARGS=" --vocab-file $VOCAB_FILE  --merge-file $MERGE_FILE"
 OUTPUT_ARGS="
     --log-interval 1 \
     --save-interval 10 \
@@ -67,6 +67,6 @@ torchrun $DISTRIBUTED_ARGS pretrain_gpt.py \
     $DATA_ARGS \
     $OUTPUT_ARGS \
     --distributed-backend nccl \
-    --save $CHECKPOINT_PATH \
-    --load $CHECKPOINT_PATH
+    # --save $CHECKPOINT_PATH \
+    # --load $CHECKPOINT_PATH
 
