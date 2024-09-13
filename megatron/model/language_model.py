@@ -31,8 +31,6 @@ def parallel_lm_logits(input_, word_embeddings_weight, parallel_output,
     # Parallel logits.
     input_parallel = mpu.copy_to_model_parallel_region(input_)
     # Matrix multiply.
-    if word_embeddings_weight is None:
-        word_embeddings_weight = input_parallel
     if bias is None:
         logits_parallel = F.linear(input_parallel, word_embeddings_weight)
     else:
