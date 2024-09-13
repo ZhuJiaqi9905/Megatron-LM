@@ -436,7 +436,7 @@ class ParallelTransformerLayer(MegatronModule):
                 get_key_value=False):
         # hidden_states: [b, s, h]
         if self.input_layernorm.weight is None:
-            print(self.input_layernorm, self.input_layernorm.elementwise_affine, self.input_layernorm.bias)
+            return hidden_states
 
         # Layer norm at the begining of the transformer layer.
         layernorm_output = self.input_layernorm(hidden_states)
