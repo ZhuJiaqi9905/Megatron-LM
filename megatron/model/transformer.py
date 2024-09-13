@@ -409,6 +409,9 @@ class ParallelTransformerLayer(MegatronModule):
         self.input_layernorm = LayerNorm(
             args.hidden_size,
             eps=args.layernorm_epsilon)
+        
+        self.hidden_size = args.hidden_size
+        self.eps=args.layernorm_epsilon
 
         assert self.input_layernorm.elementwise_affine is True and self.input_layernorm.weight is not None, f'{self.input_layernorm.elementwise_affine}'
 
@@ -431,6 +434,9 @@ class ParallelTransformerLayer(MegatronModule):
     def forward(self, hidden_states, attention_mask, layer_past=None,
                 get_key_value=False):
         # hidden_states: [b, s, h]
+        self.input_layernorm = LayerNorm(
+            self.hidden_size,
+            eps=self.layernorm_epsilon)
 
         # Layer norm at the begining of the transformer layer.
         layernorm_output = self.input_layernorm(hidden_states)
