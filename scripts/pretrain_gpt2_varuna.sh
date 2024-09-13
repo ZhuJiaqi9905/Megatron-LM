@@ -4,7 +4,7 @@ model=${1:-"gpt3_350M"}
 nstages=${2:-1}
 mbs=${3:-8}
 
-gbs=1024
+gbs=2048
 gpus_per_node=1
 total_gpus=16
 
@@ -53,12 +53,13 @@ python3 -m varuna.run_varuna \
        --num-attention-heads $NUM_ATTENTION_HEADS \
        --seq-length 1024 \
        --max-position-embeddings 1024 \
-       --train-iters 18750 \
+       --train-iters 4 \
        --lr-decay-iters 18750 \
        --save ${CHECKPOINT_PATH} \
        --data-path ${DATA_PATH} \
        --vocab-file ${VOCAB_FILE} \
        --merge-file ${MERGE_FILE} \
+       --checkpoint-activations \
        --data-impl mmap \
        --split 949,50,1 \
        --distributed-backend gloo \
@@ -70,7 +71,7 @@ python3 -m varuna.run_varuna \
        --warmup .01 \
        --log-interval 1 \
        --exit-interval 100 \
-       --save-interval 10000 \
+       --save-interval 4 \
        --eval-interval 1000 \
        --use-cpu-initialization \
        --eval-iters 5 \

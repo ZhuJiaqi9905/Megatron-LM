@@ -288,12 +288,11 @@ def backward_step(optimizer, model, loss):
 
     # Backward pass.
     timers('backward-backward').start()
-    if args.fp16:
+    if args.fp16 and not args.varuna:
         optimizer.zero_grad(set_grads_to_None=True)
         optimizer.backward(loss, update_master_grads=False)
     else:
         optimizer.zero_grad()
-        loss.backward()
     timers('backward-backward').stop()
 
     # All-reduce if needed.
@@ -343,8 +342,11 @@ def train_step(forward_or_varuna_step_func, data_iterator,
     else:
         # timers('varuna')
         varuna_step_func = forward_or_varuna_step_func
+        timers('varuna').start()
         loss, loss_reduced, overflow, global_norm = \
                 varuna_step_func(data_iterator, model)
+        timers('varuna').stop()
+
         print(f'finish varuna_step_func')
   
     # Update parameters.
@@ -409,6 +411,7 @@ def training_log(loss_dict, total_loss_dict, learning_rate, iteration,
     add_to_logging('backward-clip-grad')
     add_to_logging('optimizer')
     add_to_logging('batch generator')
+    add_to_logging('varuna')
 
     # Tensorboard values.
     if writer and torch.distributed.get_rank() == 0:
@@ -453,6 +456,7 @@ def training_log(loss_dict, total_loss_dict, learning_rate, iteration,
         if report_memory_flag:
             report_memory('after {} iterations'.format(iteration))
             report_memory_flag = False
+        print(f'timers_to_log: {timers_to_log}')
         timers.log(timers_to_log, normalizer=args.log_interval)
 
     return report_memory_flag
@@ -514,19 +518,19 @@ def train(forward_or_varuna_step_func, model, optimizer, lr_scheduler,
             print_rank_0(f"save checkpoint: {end - start}s")
 
         # Evaluation
-        if (not CKPT_AND_STOP) and args.eval_interval and iteration % args.eval_interval == 0 and \
-           args.do_valid:
-            prefix = 'iteration {}'.format(iteration)
-            evaluate_and_print_results(prefix, forward_step_func if not args.varuna else varuna_eval_func,
-                                       valid_data_iterator, model,
-                                       iteration, False)
+        # if (not CKPT_AND_STOP) and args.eval_interval and iteration % args.eval_interval == 0 and \
+        #    args.do_valid:
+        #     prefix = 'iteration {}'.format(iteration)
+        #     evaluate_and_print_results(prefix, forward_step_func if not args.varuna else varuna_eval_func,
+        #                                valid_data_iterator, model,
+        #                                iteration, False)
 
-        if args.exit_interval and iteration % args.exit_interval == 0:
-            torch.distributed.barrier()
-            time_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-            rank = torch.distributed.get_rank()
-            print_rank_0('rank: {} | time: {} | exiting the program at '
-                         'iteration {}'.format(rank, time_str, iteration))
+        # if args.exit_interval and iteration % args.exit_interval == 0:
+        #     torch.distributed.barrier()
+        #     time_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        #     rank = torch.distributed.get_rank()
+        #     print_rank_0('rank: {} | time: {} | exiting the program at '
+        #                  'iteration {}'.format(rank, time_str, iteration))
             sys.exit()
 
     return iteration

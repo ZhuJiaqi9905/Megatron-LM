@@ -587,26 +587,22 @@ class ParallelTransformer(MegatronModule):
         if hidden_states is not None and hidden_states.dim() >= 2:
             hidden_states = hidden_states.transpose(0, 1).contiguous()
 
-        if self.checkpoint_activations:
-            hidden_states = self._checkpointed_forward(hidden_states,
-                                                       attention_mask)
-        else:
+        if get_key_value:
+            presents = []
+        for index in range(self.num_layers):
+            layer = self._get_layer(index)
+            past = None
+            if layer_past is not None:
+                past = layer_past[index]
+            hidden_states = layer(hidden_states,
+                                    attention_mask,
+                                    layer_past=past,
+                                    get_key_value=get_key_value)
+            if index < (self.num_layers-1):
+                hidden_states = self.cutpoints[index](hidden_states)
             if get_key_value:
-                presents = []
-            for index in range(self.num_layers):
-                layer = self._get_layer(index)
-                past = None
-                if layer_past is not None:
-                    past = layer_past[index]
-                hidden_states = layer(hidden_states,
-                                      attention_mask,
-                                      layer_past=past,
-                                      get_key_value=get_key_value)
-                if index < (self.num_layers-1):
-                    hidden_states = self.cutpoints[index](hidden_states)
-                if get_key_value:
-                    hidden_states, present = hidden_states
-                    presents.append(present)
+                hidden_states, present = hidden_states
+                presents.append(present)
         
         # reverting data format change [s b h] --> [b s h]
         hidden_states = hidden_states.transpose(0, 1).contiguous()

@@ -5,7 +5,7 @@ import signal
 import sys, os, time
 import re
 
-hosts = [91, 90, 92, 42]
+hosts = [91, 92, 90, 42, 46, 47]
 for idx, host_suffix in enumerate(hosts):
     hosts[idx] = '172.21.0.' + str(host_suffix)
 ports = [2230 + i for i in range(4)]
@@ -13,9 +13,17 @@ meg_project_dir = '/workspace/Megatron-LM-varuna'
 varu_project_dir = '/workspace/varuna'
 user = 'root'
 pkey = '/root/.ssh/id_rsa'
+timeout = 600
 
 models = ['gpt3_350M', 'gpt3_1_3B', 'gpt3_2_7B', 'gpt3_6_7B']
-nstages = {24: 8, 22: 11, 20: 5, 18: 6, 16: 4, 14: 7, 12: 6, 10: 5, 8: 4} # nodes: nstages
+nstages = {'gpt3_350M': {24: 8, 22: 11, 20: 5, 18: 6, 16: 4, 14: 7, 12: 6, 10: 5, 8: 1},
+           'gpt3_1_3B': {24: 8, 22: 11, 20: 5, 18: 6, 16: 4, 14: 7, 12: 6, 10: 5, 8: 4},
+           'gpt3_2_7B': {24: 8, 22: 11, 20: 5, 18: 6, 16: 4, 14: 7, 12: 6, 10: 5, 8: 4},
+           'gpt3_6_7B': {24: 8, 22: 11, 20: 5, 18: 6, 16: 4, 14: 7, 12: 6, 10: 5, 8: 4}}
+mbs = {'gpt3_350M': {24: 16, 22: 16, 20: 8, 18: 8, 16: 8, 14: 4, 12: 4, 10: 16, 8: 16},
+       'gpt3_1_3B': {24: 8, 22: 8, 20: 4, 18: 4, 16: 4, 14: 2, 12: 2, 10: 2, 8: 2},
+       'gpt3_2_7B': {24: 8, 22: 8, 20: 4, 18: 4, 16: 4, 14: 2, 12: 2, 10: 2, 8: 2},
+       'gpt3_6_7B': {24: 2, 22: 2, 20: 2, 18: 1, 16: 1, 14: 1, 12: 1, 10: 1, 8: 1}}
 
 clients = []
 for host in hosts:
@@ -122,22 +130,33 @@ def run_test(number, model_i):
     # print('finish profile')
     # kill_all()
     generate_available_machines(number, True)
-    output = local.run_command('cd ' + meg_project_dir + ' && bash ./scripts/pretrain_gpt2_varuna.sh ' + models[model_i])
+    output = local.run_command(f'cd {meg_project_dir} && bash ./scripts/pretrain_gpt2_varuna.sh {models[model_i]} {nstages[models[model_i]][number]} {mbs[models[model_i]][number]}')
     print('time to sleep')
-    time.sleep(60)
-    out = check_finish(number)
-    if out == -1:
-        print('error')
-    elif out == -2:
-        print('timeout')
-    else:
-        print('success')
+    found = False
+    start = time.time()
+    while time.time() - start < timeout:
+        time.sleep(20)
+        with open('ssh_logs/ssh_out_0.log', 'r') as f:
+            for line in f:
+                if 'Process done with return code 0' in line:
+                    found = True
+                    break
+            if found:
+                break
+    # out = check_finish(number)
+    # if out == -1:
+    #     print('error')
+    # elif out == -2:
+    #     print('timeout')
+    # else:
+    #     print('success')
     print('time to kill')
     kill_all()
     print('finish pretrain')
     cp_log(number, models[model_i])
 
-run_test(16, 2)
+run_test(8, 0)
+# run_test(10, 0)
 
 # for model_i in range(0, 2):
 #     for i in (8, 12):
