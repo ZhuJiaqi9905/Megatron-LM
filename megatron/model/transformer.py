@@ -29,6 +29,7 @@ from megatron.model.fused_bias_gelu import bias_gelu_impl
 from megatron.model.utils import openai_gelu, erf_gelu
 
 from varuna import CutPoint 
+from torch.nn.parameter import Parameter
 
 # flags required to enable jit fusion kernels
 torch._C._jit_set_profiling_mode(False)
@@ -434,9 +435,10 @@ class ParallelTransformerLayer(MegatronModule):
     def forward(self, hidden_states, attention_mask, layer_past=None,
                 get_key_value=False):
         # hidden_states: [b, s, h]
-        self.input_layernorm = LayerNorm(
-            self.hidden_size,
-            eps=self.layernorm_epsilon)
+        if self.input_layernorm.weight is None:
+            self.input_layernorm.weight = Parameter(torch.Tensor(*self.hidden_dropout))
+            self.input_layernorm.bias = Parameter(torch.Tensor(*self.hidden_size))
+            self.input_layernorm.reset_parameters()
 
         # Layer norm at the begining of the transformer layer.
         layernorm_output = self.input_layernorm(hidden_states)
@@ -595,22 +597,25 @@ class ParallelTransformer(MegatronModule):
         if hidden_states is not None and hidden_states.dim() >= 2:
             hidden_states = hidden_states.transpose(0, 1).contiguous()
 
-        if get_key_value:
-            presents = []
-        for index in range(self.num_layers):
-            layer = self._get_layer(index)
-            past = None
-            if layer_past is not None:
-                past = layer_past[index]
-            hidden_states = layer(hidden_states,
-                                    attention_mask,
-                                    layer_past=past,
-                                    get_key_value=get_key_value)
-            if index < (self.num_layers-1):
-                hidden_states = self.cutpoints[index](hidden_states)
+        if self.checkpoint_activations:
+            hidden_states = self._checkpointed_forward(hidden_states, attention_mask)
+        else:
             if get_key_value:
-                hidden_states, present = hidden_states
-                presents.append(present)
+                presents = []
+            for index in range(self.num_layers):
+                layer = self._get_layer(index)
+                past = None
+                if layer_past is not None:
+                    past = layer_past[index]
+                hidden_states = layer(hidden_states,
+                                        attention_mask,
+                                        layer_past=past,
+                                        get_key_value=get_key_value)
+                if index < (self.num_layers-1):
+                    hidden_states = self.cutpoints[index](hidden_states)
+                if get_key_value:
+                    hidden_states, present = hidden_states
+                    presents.append(present)
         
         # reverting data format change [s b h] --> [b s h]
         hidden_states = hidden_states.transpose(0, 1).contiguous()
