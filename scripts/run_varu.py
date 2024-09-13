@@ -14,7 +14,7 @@ varu_project_dir = '/workspace/varuna'
 user = 'root'
 pkey = '/root/.ssh/id_rsa'
 
-models = ['gpt3_350M', 'gpt3_1_3B', 'gpt3_2_7B']
+models = ['gpt3_350M', 'gpt3_1_3B', 'gpt3_2_7B', 'gpt3_6_7B']
 nstages = {24: 8, 22: 11, 20: 5, 18: 6, 16: 4, 14: 7, 12: 6, 10: 5, 8: 4} # nodes: nstages
 
 clients = []
@@ -24,18 +24,35 @@ for host in hosts:
 
 local = clients[0]
 
-def generate_available_machines(number):
-    with open('available_machines.out', 'w') as fp:
-        machines = 0
-        for host in hosts:
-            for port in ports:
-                if machines < number:
-                    machines += 1
-                    fp.write(str(host) + ':' + str(port) + '\n')
-                else:
+def generate_available_machines(number, is_pretrain=True):
+    if number == 16:
+        if is_pretrain:
+            output = local.run_command('cd ' + meg_project_dir + ' && cp available_machines_pretrain.out available_machines.out')
+            local.wait_finished(output)
+            for line in output.stdout:
+                print(line)
+            for line in output.stderr:
+                print(line)
+        else:
+            output = local.run_command('cd ' + meg_project_dir + ' && cp available_machines_profile.out available_machines.out')
+            local.wait_finished(output)
+            for line in output.stdout:
+                print(line)
+            for line in output.stderr:
+                print(line)
+        return
+    if is_pretrain:
+        with open('available_machines.out', 'w') as fp:
+            machines = 0
+            for host in hosts:
+                for port in ports:
+                    if machines < number:
+                        machines += 1
+                        fp.write(str(host) + ':' + str(port) + '\n')
+                    else:
+                        break
+                if machines >= number:
                     break
-            if machines >= number:
-                break
 
 def kill_all():
     output = local.run_command('cd ' + meg_project_dir + ' && bash ./scripts/kill_all.sh')
@@ -90,8 +107,8 @@ def run_test(number, model_i):
     rm_tmp()
     print('kill all')
     time.sleep(5)
-    generate_available_machines(number)
-    print('finish generate_available_machines')
+    # generate_available_machines(number, False)
+    # print('finish generate_available_machines')
     # output = local.run_command('cd ' + meg_project_dir + ' && bash ./scripts/profile_gpt2.sh ' + models[model_i])
     # for line in output.stdout:
     #     print(line)
@@ -104,6 +121,7 @@ def run_test(number, model_i):
     #     print(line)
     # print('finish profile')
     # kill_all()
+    generate_available_machines(number, True)
     output = local.run_command('cd ' + meg_project_dir + ' && bash ./scripts/pretrain_gpt2_varuna.sh ' + models[model_i])
     print('time to sleep')
     time.sleep(60)
@@ -119,7 +137,7 @@ def run_test(number, model_i):
     print('finish pretrain')
     cp_log(number, models[model_i])
 
-run_test(12, 1)
+run_test(16, 2)
 
 # for model_i in range(0, 2):
 #     for i in (8, 12):

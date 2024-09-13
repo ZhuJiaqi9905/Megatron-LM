@@ -4,7 +4,7 @@ import math
 import signal
 import sys
 
-hosts = [91, 90, 92, 46, 42, 47]
+hosts = [91, 92, 42, 46]
 for idx, host_suffix in enumerate(hosts):
     hosts[idx] = '172.21.0.' + str(host_suffix)
 ports = [2230 + i for i in range(4)]
