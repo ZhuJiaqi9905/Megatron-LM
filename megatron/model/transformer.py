@@ -436,8 +436,8 @@ class ParallelTransformerLayer(MegatronModule):
                 get_key_value=False):
         # hidden_states: [b, s, h]
         if self.input_layernorm.weight is None:
-            self.input_layernorm.weight = Parameter(torch.Tensor(*self.hidden_dropout))
-            self.input_layernorm.bias = Parameter(torch.Tensor(*self.hidden_size))
+            self.input_layernorm.weight = Parameter(torch.Tensor(self.hidden_size))
+            self.input_layernorm.bias = Parameter(torch.Tensor(self.hidden_size))
             self.input_layernorm.reset_parameters()
 
         # Layer norm at the begining of the transformer layer.
