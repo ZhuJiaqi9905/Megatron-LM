@@ -523,6 +523,7 @@ class ParallelTransformer(MegatronModule):
             'number of layers should be divisible by number of unique layers'
         self.param_sharing_style = args.param_sharing_style
 
+        print(f'self.num_layers: {self.num_layers} self.num_unique_layers: {self.num_unique_layers}')
         # Transformer layers.
         def build_layer(layer_number):
             return ParallelTransformerLayer(
