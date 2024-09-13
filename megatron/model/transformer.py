@@ -410,6 +410,8 @@ class ParallelTransformerLayer(MegatronModule):
             args.hidden_size,
             eps=args.layernorm_epsilon)
 
+        assert self.input_layernorm.elementwise_affine is True and self.input_layernorm.weight is not None, f'{self.input_layernorm.elementwise_affine}'
+
         # Self attention.
         self.attention = ParallelSelfAttention(attention_mask_func, init_method,
                                                output_layer_init_method,

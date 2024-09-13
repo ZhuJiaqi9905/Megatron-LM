@@ -59,7 +59,6 @@ python3 -m varuna.run_varuna \
        --data-path ${DATA_PATH} \
        --vocab-file ${VOCAB_FILE} \
        --merge-file ${MERGE_FILE} \
-       --checkpoint-activations \
        --data-impl mmap \
        --split 949,50,1 \
        --distributed-backend gloo \

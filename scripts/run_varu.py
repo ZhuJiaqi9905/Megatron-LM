@@ -16,11 +16,11 @@ pkey = '/root/.ssh/id_rsa'
 timeout = 600
 
 models = ['gpt3_350M', 'gpt3_1_3B', 'gpt3_2_7B', 'gpt3_6_7B']
-nstages = {'gpt3_350M': {24: 8, 22: 11, 20: 5, 18: 6, 16: 4, 14: 7, 12: 6, 10: 5, 8: 1},
+nstages = {'gpt3_350M': {24: 8, 22: 11, 20: 5, 18: 6, 16: 4, 14: 7, 12: 6, 10: 5, 8: 2},
            'gpt3_1_3B': {24: 8, 22: 11, 20: 5, 18: 6, 16: 4, 14: 7, 12: 6, 10: 5, 8: 4},
            'gpt3_2_7B': {24: 8, 22: 11, 20: 5, 18: 6, 16: 4, 14: 7, 12: 6, 10: 5, 8: 4},
            'gpt3_6_7B': {24: 8, 22: 11, 20: 5, 18: 6, 16: 4, 14: 7, 12: 6, 10: 5, 8: 4}}
-mbs = {'gpt3_350M': {24: 16, 22: 16, 20: 8, 18: 8, 16: 8, 14: 4, 12: 4, 10: 16, 8: 16},
+mbs = {'gpt3_350M': {24: 16, 22: 16, 20: 8, 18: 8, 16: 8, 14: 4, 12: 4, 10: 4, 8: 4},
        'gpt3_1_3B': {24: 8, 22: 8, 20: 4, 18: 4, 16: 4, 14: 2, 12: 2, 10: 2, 8: 2},
        'gpt3_2_7B': {24: 8, 22: 8, 20: 4, 18: 4, 16: 4, 14: 2, 12: 2, 10: 2, 8: 2},
        'gpt3_6_7B': {24: 2, 22: 2, 20: 2, 18: 1, 16: 1, 14: 1, 12: 1, 10: 1, 8: 1}}
@@ -70,8 +70,8 @@ def kill_all():
     for line in output.stderr:
         print(line)
 
-def cp_log(number, model):
-    output = local.run_command('cd ' + meg_project_dir + ' && rm -rf ssh_logs_' + str(number) + '_' + model + ' && cp -r ssh_logs ssh_logs_' + str(number) + '_' + model)
+def cp_log(number, model, nstage, mbs):
+    output = local.run_command(f'cd {meg_project_dir} && rm -rf ssh_logs_{number}_{model} && cp -r ssh_logs ssh_logs_{number}_{model}_{nstage}_{mbs}')
     local.wait_finished(output)
 
 def rm_tmp():
@@ -153,10 +153,10 @@ def run_test(number, model_i):
     print('time to kill')
     kill_all()
     print('finish pretrain')
-    cp_log(number, models[model_i])
+    cp_log(number, models[model_i], nstages[models[model_i]], mbs[models[model_i]])
 
-run_test(8, 0)
-# run_test(10, 0)
+# run_test(8, 0)
+run_test(10, 0)
 
 # for model_i in range(0, 2):
 #     for i in (8, 12):
