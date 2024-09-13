@@ -618,6 +618,9 @@ class ParallelTransformer(MegatronModule):
         
         # reverting data format change [s b h] --> [b s h]
         hidden_states = hidden_states.transpose(0, 1).contiguous()
+        
+        if self.final_layernorm.weight is None:
+            return hidden_states
 
         # Final layer norm.
         output = self.final_layernorm(hidden_states)
