@@ -265,7 +265,12 @@ def setup_model_and_optimizer(model_provider_func, get_batch_fn):
     lr_scheduler = get_learning_rate_scheduler(optimizer)
 
     if args.load is not None:
+        print_rank_0("")
+        start = time.time()
         args.iteration = load_checkpoint(model, optimizer, lr_scheduler)
+        end = time.time()
+        print_rank_0(f"load checkpoint: {end - start}s")
+        exit()
     else:
         args.iteration = 0
 

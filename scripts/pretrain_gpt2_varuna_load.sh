@@ -7,6 +7,7 @@ total_gpus=${4:-16}
 
 gbs=2048
 gpus_per_node=1
+total_gpus=16
 
 
 if [[ "${model}" == "gpt3_350M" ]]; then
@@ -35,9 +36,8 @@ VOCAB_FILE=/mnt/gpu-91/dataset/gpt2-vocab.json
 MERGE_FILE=/mnt/gpu-91/dataset/gpt2-merges.txt
 CHECKPOINT_PATH=/mnt/gpu-91/varuna/checkpoints/${model}/${total_gpus}
 
-mkdir -p ${CHECKPOINT_PATH}
 # rm _tmp_*
-rm -rf ${CHECKPOINT_PATH}/*
+# rm -rf ${CHECKPOINT_PATH}/*
 
 # --nstages ${nstages} --chunk_size ${mbs} \
 
@@ -48,7 +48,7 @@ python3 -m varuna.run_varuna \
        --batch_size ${gbs} \
        --total_gpus ${total_gpus} \
        --gpus_per_node ${gpus_per_node} \
-       --log_dir ssh_log_${total_gpus}_${model}_${nstages}_${mbs} \
+       --log_dir ssh_log_${total_gpus}_${model}_${nstages}_${mbs}_load \
        --no_morphing pretrain_gpt2.py \
        --num-layers $NUM_LAYERS \
        --hidden-size $HIDDEN_SIZE \
@@ -77,8 +77,8 @@ python3 -m varuna.run_varuna \
        --use-cpu-initialization \
        --eval-iters 5 \
        --varuna --fp16 \
-       --fp16-lm-cross-entropy
-       # --load ${CHECKPOINT_PATH} \
+       --fp16-lm-cross-entropy \
+       --load ${CHECKPOINT_PATH}
 
 set +x
 
