@@ -40,6 +40,7 @@ def parse_args(extra_args_provider=None, ignore_unknown_args=False):
     parser = _add_logging_args(parser)
     parser = _add_inference_args(parser)
     parser = _add_transformer_engine_args(parser)
+    # Retrieval-Enhanced Transformer
     parser = _add_retro_args(parser)
     parser = _add_experimental_args(parser)
 

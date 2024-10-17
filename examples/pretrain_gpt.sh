@@ -4,10 +4,8 @@
 
 export CUDA_DEVICE_MAX_CONNECTIONS=1
 
-CHECKPOINT_PATH=<Specify path>
-VOCAB_FILE=<Specify path to file>/gpt2-vocab.json
-MERGE_FILE=<Specify path to file>/gpt2-merges.txt
-DATA_PATH=<Specify path and file prefix>_text_document
+VOCAB_FILE=/workspace/file/vocabs/gpt2-vocab.json
+MERGE_FILE=/workspace/file/vocabs/gpt2-merges.txt
 
 GPT_ARGS="
     --num-layers 24 \
@@ -25,18 +23,20 @@ GPT_ARGS="
     --weight-decay 1e-2 \
     --lr-warmup-fraction .01 \
     --clip-grad 1.0 \
+    --tokenizer-type GPT2BPETokenizer \
+    --use-mcore-models \
+    --transformer-impl local \
     --fp16
 "
 
 DATA_ARGS="
-    --data-path $DATA_PATH \
     --vocab-file $VOCAB_FILE \
     --merge-file $MERGE_FILE \
-    --split 949,50,1
+    --mock-data \
 "
 
 OUTPUT_ARGS="
-    --log-interval 100 \
+    --log-interval 1 \
     --save-interval 10000 \
     --eval-interval 1000 \
     --eval-iters 10
@@ -46,5 +46,3 @@ torchrun pretrain_gpt.py \
     $GPT_ARGS \
     $DATA_ARGS \
     $OUTPUT_ARGS \
-    --save $CHECKPOINT_PATH \
-    --load $CHECKPOINT_PATH

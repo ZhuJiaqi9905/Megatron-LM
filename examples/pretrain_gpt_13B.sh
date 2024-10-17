@@ -1,15 +1,15 @@
 #!/bin/bash
 
-# Runs the "345M" parameter model
+# Runs the "13B" parameter model
 
 export CUDA_DEVICE_MAX_CONNECTIONS=1
 
 GPUS_PER_NODE=4
 # Change for multinode config
-MASTER_ADDR=localhost
+MASTER_ADDR=172.21.0.91
 MASTER_PORT=6000
-NNODES=1
-NODE_RANK=0
+NODE_RANK=$1
+NNODES=$2
 WORLD_SIZE=$(($GPUS_PER_NODE*$NNODES))
 
 
@@ -25,16 +25,16 @@ DISTRIBUTED_ARGS="
 "
 
 GPT_ARGS="
-    --tensor-model-parallel-size 2 \
+    --tensor-model-parallel-size 4 \
     --pipeline-model-parallel-size 2 \
     --sequence-parallel \
-    --num-layers 24 \
-    --hidden-size 1024 \
-    --num-attention-heads 16 \
+    --num-layers 40 \
+    --hidden-size 5120 \
+    --num-attention-heads 40 \
     --seq-length 1024 \
     --max-position-embeddings 1024 \
-    --micro-batch-size 4 \
-    --global-batch-size 16 \
+    --micro-batch-size 1 \
+    --global-batch-size 2048 \
     --lr 0.00015 \
     --train-iters 500000 \
     --lr-decay-iters 320000 \
@@ -43,6 +43,8 @@ GPT_ARGS="
     --weight-decay 1e-2 \
     --lr-warmup-fraction .01 \
     --clip-grad 1.0 \
+    --use-mcore-models \
+    --transformer-impl local \
     --fp16
 "
 
@@ -54,6 +56,8 @@ DATA_ARGS="
 
 OUTPUT_ARGS="
     --log-interval 1 \
+    --timing-log-level 2 \
+    --timing-log-option all \
     --save-interval 10000 \
     --eval-interval 1000 \
     --eval-iters 10

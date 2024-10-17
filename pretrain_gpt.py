@@ -30,7 +30,6 @@ from megatron.core.models.gpt.gpt_layer_specs import (
     get_gpt_layer_with_transformer_engine_spec,
 )
 
-
 def model_provider(pre_process=True, post_process=True) -> Union[GPTModel, megatron.legacy.model.GPTModel]:
     """Builds the model.
 
@@ -62,7 +61,6 @@ def model_provider(pre_process=True, post_process=True) -> Union[GPTModel, megat
                 transformer_layer_spec = get_gpt_layer_with_transformer_engine_spec(args.num_experts, args.moe_grouped_gemm)
             else:
                 transformer_layer_spec = get_gpt_layer_local_spec(args.num_experts, args.moe_grouped_gemm)
-
         model = GPTModel(
             config=config,
             transformer_layer_spec=transformer_layer_spec,
