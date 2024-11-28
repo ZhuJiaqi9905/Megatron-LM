@@ -57,6 +57,7 @@ class GPTModel(LanguageModule):
 
         self.transformer_layer_spec: ModuleSpec = transformer_layer_spec
         self.vocab_size = vocab_size
+        print(f"vocab_size: {self.vocab_size}")
         self.max_sequence_length = max_sequence_length
         self.pre_process = pre_process
         self.post_process = post_process

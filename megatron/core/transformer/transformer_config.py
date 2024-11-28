@@ -26,7 +26,18 @@ class TransformerConfig(ModelParallelConfig):
 
     hidden_size: int = 0
     """Transformer hidden size."""
-
+    
+    padded_vocab_size: int = 0
+    """Padded vocab size"""
+    
+    seq_length: int = 0
+    """Sequence Length in total."""
+    
+    micro_batch_size: int = 0
+    """Micro batch size for the model."""
+    
+    max_sequence_length: int = 0
+    
     num_attention_heads: int = 0
     """Number of transformer attention heads."""
 
@@ -149,7 +160,6 @@ class TransformerConfig(ModelParallelConfig):
     ####################
     # activation recomputation
     ####################
-    recompute_granularity: str = None
     recompute_granularity: str = None
     """Determines which type of activation recompute to use.  Megatron-core supports 'selective'
     activation checkpointing where only the memory intensive part of attention is checkpointed.

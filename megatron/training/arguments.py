@@ -43,7 +43,7 @@ def parse_args(extra_args_provider=None, ignore_unknown_args=False):
     # Retrieval-Enhanced Transformer
     parser = _add_retro_args(parser)
     parser = _add_experimental_args(parser)
-
+    parser = _add_profiler_args(parser)
     # Custom arguments.
     if extra_args_provider is not None:
         parser = extra_args_provider(parser)
@@ -1612,4 +1612,24 @@ def _add_experimental_args(parser):
     group.add_argument('--yaml-cfg', type=str, default=None,
                        help = 'Config file to add additional arguments')
 
+    return parser
+
+def _add_profiler_args(parser):
+    group = parser.add_argument_group(title='flexpipe_profiler')
+
+    group.add_argument('--prof-path', type=str, default=None, help='')
+    group.add_argument('--prof-model-name', type=str, default='all', help='')
+    group.add_argument('--prof-model-size', type=str, default='all', help='')
+    group.add_argument('--prof-time-only', action='store_true', help='')
+    group.add_argument('--prof-memory-only', action='store_true', help='')
+    group.add_argument('--prof-warmup-times', type=int, default=20, help='')
+    group.add_argument('--prof-repeat-times', nargs='+', type=int, default=[50], help='')
+    group.add_argument('--prof-warmup-threshold', type=int, default=None, help='')
+    group.add_argument('--prof-repeat-threshold', type=int, default=None, help='')
+    group.add_argument('--prof-skip-running', action='store_true', help='')
+    group.add_argument('--prof-num-nodes', type=int, default=None, help='')
+    group.add_argument('--prof-node-rank', type=int, default=None, help='')
+    group.add_argument('--prof-ref-data', type=str, default=None, help='')
+    group.add_argument('--prof-mbs-list', nargs='+', type=int, default=None, help='')
+    group.add_argument('--prof-seq-lens-list', nargs='+', type=int, default=None, help='')
     return parser

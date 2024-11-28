@@ -811,13 +811,14 @@ def training_log(loss_dict, total_loss_dict, learning_rate, decoupled_learning_r
         total_loss_dict[skipped_iters_key] = 0
         total_loss_dict[nan_iters_key] = 0
         print_rank_last(log_string)
-        if report_memory_flag and learning_rate > 0.:
+        # if report_memory_flag and learning_rate > 0.:
+        if report_memory_flag:
             # Report memory after optimizer state has been initialized.
             if torch.distributed.get_rank() == 0:
                 num_microbatches = get_num_microbatches()
                 report_theoretical_memory(args, num_microbatches=num_microbatches, verbose=True)
             report_memory('(after {} iterations)'.format(iteration))
-            report_memory_flag = False
+            # report_memory_flag = False
         
         timers.log(timers_to_log, normalizer=args.log_interval)
 

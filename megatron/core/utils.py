@@ -9,6 +9,7 @@ import torch
 
 from megatron.core import parallel_state
 from megatron.core.dist_checkpointing.mapping import ShardedTensor
+from torch.nn.parallel import DistributedDataParallel as torchDDP
 
 
 def ensure_divisibility(numerator, denominator):
@@ -338,3 +339,17 @@ def drain_embedding_wgrad_compute(config, embedding_activation_buffer, grad_outp
     grad_output = grad_output_buffer.pop(0)
     wgrad_compute(all_gathered_input[1], grad_output, weight)
     input, all_gathered_input[1], grad_output = None, None, None
+
+def unwrap_model(model, module_instances=(torchDDP)):
+    return_list = True
+    if not isinstance(model, list):
+        model = [model]
+        return_list = False
+    unwrapped_model = []
+    for model_module in model:
+        while isinstance(model_module, module_instances):
+            model_module = model_module.module
+        unwrapped_model.append(model_module)
+    if not return_list:
+        return unwrapped_model[0]
+    return unwrapped_model
