@@ -10,7 +10,7 @@ import gc
 import torch.distributed as dist 
 import numpy as np 
 from torch import Tensor
-from op import OpLanguageModelEmbedding, OpLocalLayerNorm, OpLocalLayerNormMlpDropout, OpLocalLayerNormPostProcess, OpLocalLayerNormSelfAttentionDropout, OpType, OpPostProcess
+from op import OpLanguageModelEmbedding, OpLocalLayerNorm, OpLocalLayerNormMlpDropout, OpLocalLayerNormPostProcess, OpLocalLayerNormSelfAttentionDropout, OpType, OpPostProcess,OpTELayerNorm,OpTELayerNormMlpDropout, OpTELayerNormPostProcess, OpTELayerNormSelfAttentionDropout
 from megatron.core.transformer.module import Float16Module
 from megatron.core import mpu
 from megatron.core.utils import unwrap_model
@@ -110,6 +110,14 @@ def get_op(op_name: str, config: TransformerConfig):
         op = OpLocalLayerNorm(OpType.LocalLayerNorm, "LocalLayerNorm", config)
     elif op_name == "LocalLayerNormPostProcess":
         op = OpLocalLayerNormPostProcess(OpType.LocalLayerNormPostProcess, "LocalLayerNormPostProcess", config)
+    elif op_name == "TELayerNormPostProcess":
+        op = OpTELayerNormPostProcess(OpType.TELayerNormPostProcess, "TELayerNormPostProcess", config)
+    elif op_name == "TELayerNormSelfAttentionDropout":
+        op = OpTELayerNormSelfAttentionDropout(OpType.TELayerNormSelfAttentionDropout, "TELayerNormSelfAttentionDropout", config)
+    elif op_name == "TELayerNorm":
+        op = OpTELayerNorm(OpType.TELayerNorm, "TELayerNorm", config)
+    elif op_name == "TELayerNormMlpDropout":
+        op = OpTELayerNormMlpDropout(OpType.TELayerNormMlpDropout, "TELayerNormMlpDropout", config)
     op.cuda(torch.cuda.current_device())
     args = get_args()
     if args.fp16:
@@ -132,7 +140,7 @@ def profile_op_compute2(op, op_name, input_tensors, input_extra_tensors, input_t
     args = get_args()
 
 
-    if op_name in ["PostProcess", "LocalLayerNormPostProcess"]: # Those op need to do "one fwd, one bwd"
+    if op_name in ["PostProcess", "LocalLayerNormPostProcess", "TELayerNormSelfAttentionDropout", "TELayerNormMlpDropout", "TELayerNorm","TELayerNormPostProcess"]: # Those op need to do "one fwd, one bwd"
         ## warm-up
         for _ in range(args.prof_warmup_times):
             # forward

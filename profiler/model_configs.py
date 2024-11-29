@@ -6,13 +6,17 @@ model_prof_configs = {
     "gpt": {
         "dtype": "fp16",
         "model_size": ["350M", "1_3B", "2_6B", "6_7B",],
-        # "mbs": [1, 2, 4, 8], 
-        "mbs": [8],
+        "mbs": [1, 2, 4, 8], 
+        # "mbs": [8],
         "seq_len": [2048],
         # "mbs": [1, 2, 3, 4, 5, 6, 7, 8],
 
         # "seq_len": [1024, 2048, 3072, 4096, 5120, 6144, 7168, 8192],
-        "ops": ["LocalLayerNormPostProcess"]
+        "ops": ["LocalLayerNormSelfAttentionDropout", 
+                "TELayerNormSelfAttentionDropout", 
+                "LocalLayerNormMlpDropout", 
+                "TELayerNormMlpDropout", 
+                ]
         # "ops": ["LocalLayerNormMlpDropout", "LocalLayerNormSelfAttentionDropout", "LanguageModelEmbedding", "PostProcess", "LocalLayerNorm"]
     }
 }
