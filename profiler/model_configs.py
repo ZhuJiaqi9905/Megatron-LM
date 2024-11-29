@@ -12,9 +12,12 @@ model_prof_configs = {
         # "mbs": [1, 2, 3, 4, 5, 6, 7, 8],
 
         # "seq_len": [1024, 2048, 3072, 4096, 5120, 6144, 7168, 8192],
-        "ops": ["LocalLayerNormSelfAttentionDropout", 
-                "TELayerNormSelfAttentionDropout", 
+        "ops": [
+                "LanguageModelEmbedding",
+                "PostProcess",
+                "LocalLayerNormSelfAttentionDropout", 
                 "LocalLayerNormMlpDropout", 
+                "TELayerNormSelfAttentionDropout", 
                 "TELayerNormMlpDropout", 
                 ]
         # "ops": ["LocalLayerNormMlpDropout", "LocalLayerNormSelfAttentionDropout", "LanguageModelEmbedding", "PostProcess", "LocalLayerNorm"]

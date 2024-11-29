@@ -9,7 +9,7 @@ export CUDA_DEVICE_MAX_CONNECTIONS=1
 GPUS_PER_NODE=1
 # Change for multinode config
 MASTER_ADDR=localhost
-MASTER_PORT=7000
+MASTER_PORT=7010
 NNODES=1
 NODE_RANK=0
 WORLD_SIZE=$(($GPUS_PER_NODE*$NNODES))
@@ -17,11 +17,11 @@ WORLD_SIZE=$(($GPUS_PER_NODE*$NNODES))
 # fixed Model related configuration here, pls not overlap with json config
 HIDDEN_SIZE=1024
 NUM_ATTENTION_HEADS=16
-NUM_LAYERS=6
+NUM_LAYERS=24
 SEQ_LENGTH=2048
 MAX_POSITION_EMBEDDINGS=$SEQ_LENGTH
-MICRO_BATCH_SIZE=4
-GLOBAL_BATCH_SIZE=4
+MICRO_BATCH_SIZE=2
+GLOBAL_BATCH_SIZE=256
 
 
 # GLOBAL_BATCH_SIZE=$((128*1024/${SEQ_LENGTH}))
@@ -67,7 +67,7 @@ GPT_ARGS="
     --fp16 \
     --tokenizer-type GPT2BPETokenizer \
     --use-mcore-models \
-    --transformer-impl local \
+    --transformer-impl transformer_engine \
     --recompute-granularity full \
     --recompute-method uniform \
     --recompute-num-layers 6 \
