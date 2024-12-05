@@ -1,7 +1,7 @@
 #! /bin/bash
 export PYTHONPATH="/workspace/python/Megatron-LM-0.6.0/:${PYTHONPATH}:/workspace/python/Megatron-LM/"
 MASTER_ADDR=localhost
-MASTER_PORT=7000
+MASTER_PORT=7010
 NNODES=1
 NODE_RANK=0
 
@@ -48,9 +48,9 @@ GPT_ARGS="
 "
 
 mkdir ${PROFILING_PATH}
-MAX_NUM_GPUS=1
+MAX_NUM_GPUS=4
 MODEL_NAME=gpt
-MODEL_SIZE=350M
+MODEL_SIZE=1_3B
 
 for ((tp_size=1; tp_size<=$MAX_NUM_GPUS; tp_size=tp_size*2))
 do

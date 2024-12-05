@@ -38,6 +38,7 @@ class OpType(Enum):
     TELayerNormMlpDropout = 12
     TELayerNorm = 13
     TELayerNormPostProcess = 14
+    TECoreAttention = 15
 
 
 class OpModule(MegatronModule):
@@ -990,5 +991,70 @@ class OpTELayerNormSelfAttentionDropout(OpModule):
                 self.training, self.config.bias_dropout_fusion
             )(attention_output_with_bias, residual, self.hidden_dropout)
 
+        output_tensors["hidden_states"] = hidden_states
+        return output_tensors
+    
+
+class OpTECoreAttention(OpModule):
+    def __init__(
+        self,
+        op_type: OpType,
+        op_name: str,
+        config: TransformerConfig):
+        super().__init__(op_type, op_name, config)
+        
+        self.attention = TEDotProductAttention(self.config, 1, AttnMaskType.no_mask, attention_type="self")
+
+        qkv_projection_size = config.kv_channels * config.num_attention_heads
+        qkv_weight = config.hidden_size * qkv_projection_size * 3 / self.tp_size
+        self.weight_size = qkv_weight 
+        
+        
+        self.input_tensors_info = {
+            "query": {
+                "shape": [config.seq_length, config.micro_batch_size, config.num_attention_heads, config.kv_channels],
+                "tp_split_dim": 2,
+                "dp_split_dim": 1,
+            },
+            "key": {
+                "shape": [config.seq_length_kv, config.micro_batch_size, config.num_attention_heads, config.kv_channels],
+                "tp_split_dim": 2,
+                "dp_split_dim": 1,               
+            },
+            "value": {
+                "shape": [config.seq_length_kv, config.micro_batch_size, config.num_attention_heads, config.kv_channels], 
+                "tp_split_dim": 2,
+                "dp_split_dim": 1,                
+            }
+        }
+        self.input_extra_tensors_info = {}
+        self.output_tensors_info = {
+            "hidden_states": {
+                "shape": [
+                config.seq_length,
+                config.micro_batch_size,
+                config.hidden_size,
+            ],
+                "tp_split_dim": -1 if not config.sequence_parallel else 0,
+                "dp_split_dim": 1,
+            }
+        }
+        self.output_extra_tensors_info = {}   
+
+        
+    def forward(
+        self,
+        input_tensors: dict[str, Tensor],
+        input_extra_tensors: dict[str, Tensor],
+        output_extra_tensors: dict[str, Tensor],
+    ):
+        output_tensors = {}
+        if type(input_tensors) is list:
+            input_tensors = input_tensors[0]
+        query: Tensor = input_tensors["query"]
+        key: Tensor = input_tensors["key"]
+        value: Tensor = input_tensors["value"] 
+        
+        hidden_states = self.attention(query, key, value, None, AttnMaskType.no_mask)
         output_tensors["hidden_states"] = hidden_states
         return output_tensors

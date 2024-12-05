@@ -31,7 +31,10 @@ class TransformerConfig(ModelParallelConfig):
     """Padded vocab size"""
     
     seq_length: int = 0
+    
     """Sequence Length in total."""
+    
+    seq_length_kv: int = 0
     
     micro_batch_size: int = 0
     """Micro batch size for the model."""

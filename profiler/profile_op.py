@@ -10,7 +10,7 @@ import gc
 import torch.distributed as dist 
 import numpy as np 
 from torch import Tensor
-from op import OpLanguageModelEmbedding, OpLocalLayerNorm, OpLocalLayerNormMlpDropout, OpLocalLayerNormPostProcess, OpLocalLayerNormSelfAttentionDropout, OpType, OpPostProcess,OpTELayerNorm,OpTELayerNormMlpDropout, OpTELayerNormPostProcess, OpTELayerNormSelfAttentionDropout
+from op import OpLanguageModelEmbedding, OpLocalLayerNorm, OpLocalLayerNormMlpDropout, OpLocalLayerNormPostProcess, OpLocalLayerNormSelfAttentionDropout, OpType, OpPostProcess,OpTELayerNorm,OpTELayerNormMlpDropout, OpTELayerNormPostProcess, OpTELayerNormSelfAttentionDropout, OpTECoreAttention
 from megatron.core.transformer.module import Float16Module
 from megatron.core import mpu
 from megatron.core.utils import unwrap_model
@@ -23,13 +23,13 @@ DATA_BASE = 4/(1024 * 1024)
 
 # 初始化 DataFrame，定义列名
 columns = [
-    "model_name", "model_size" , "micro_batch_size", "sequence_length", "fwd_compute", "bwd_compute", 
+    "model_name", "model_size" , "micro_batch_size", "sequence_length_q", "sequence_length_kv","fwd_compute", "bwd_compute", 
     "fwd_allocated", "fwd_reserved", "bwd_allocated", "bwd_reserved", 
     "input", "output", "weight"
 ]
 data = pd.DataFrame(columns=columns)
 
-def add_data(df, model_name, model_size, op, micro_batch_size, sequence_length, fwd_compute, bwd_compute, 
+def add_data(df, model_name, model_size, op, micro_batch_size, sequence_length_q,sequence_length_kv, fwd_compute, bwd_compute, 
              fwd_allocated, fwd_reserved, bwd_allocated, bwd_reserved, 
              input_size, output_size, weight_size):
     new_row = {
@@ -37,7 +37,8 @@ def add_data(df, model_name, model_size, op, micro_batch_size, sequence_length, 
         "model_size": model_size,
         "op": op,
         "micro_batch_size": micro_batch_size,
-        "sequence_length": sequence_length,
+        "sequence_length_q": sequence_length_q,
+        "sequence_length_kv": sequence_length_kv,
         "fwd_compute": fwd_compute,
         "bwd_compute": bwd_compute,
         "fwd_allocated": fwd_allocated,
@@ -118,6 +119,8 @@ def get_op(op_name: str, config: TransformerConfig):
         op = OpTELayerNorm(OpType.TELayerNorm, "TELayerNorm", config)
     elif op_name == "TELayerNormMlpDropout":
         op = OpTELayerNormMlpDropout(OpType.TELayerNormMlpDropout, "TELayerNormMlpDropout", config)
+    elif op_name == "TECoreAttention":
+        op = OpTECoreAttention(OpType.TECoreAttention, "TECoreAttention", config)
     op.cuda(torch.cuda.current_device())
     args = get_args()
     if args.fp16:
@@ -229,57 +232,6 @@ def profile_op_compute2(op, op_name, input_tensors, input_extra_tensors, input_t
     
     return avg_fwd_time, avg_bwd_time
 
-
-def profile_op_compute(op, op_name, input_tensors, input_extra_tensors, input_tensors_for_bwd, output_extra_tensors):
-    grad_type = torch.float
-    ## forward warm-up
-    args = get_args()
-    torch.cuda.synchronize()
-    start_time = time.time()
-    for _ in range(args.prof_warmup_times):
-        output_tensors = op(input_tensors, input_extra_tensors, output_extra_tensors) 
-    torch.cuda.synchronize()
-    end_time = time.time()   
-
-    ##### forward, sync after all runs
-    sum_fwd_time = 0
-    torch.cuda.synchronize()
-    start_time = time.time()
-    for _ in range(args.prof_repeat_times[0]):
-        output_tensors = op(input_tensors, input_extra_tensors, output_extra_tensors)          
-    torch.cuda.synchronize()
-    end_time = time.time()  
-    sum_fwd_time += end_time - start_time            
-    avg_fwd_time = sum_fwd_time * 1000000 / args.prof_repeat_times[0]
-    
-    # backward warm-up
-    origin_outputs, output_grads = get_outputs_and_grads(output_tensors, output_extra_tensors, grad_type) 
-    sum_bwd_time = 0
-    ### warmup for backward
-    for _i in range(args.prof_warmup_times):
-        if op_name in ["LanguageModelEmbedding"]: # embedding is the first operator, we do not need to compute the grad of the input
-            torch.autograd.backward(origin_outputs, grad_tensors=output_grads, retain_graph=True)
-        else: # for other operators, we need to compute the grad of both the input and the weight 
-            # print(f"input_tensors_for_bwd: {input_tensors_for_bwd}. origin_outputs: {origin_outputs}")
-    
-            torch.autograd.grad(outputs=origin_outputs, grad_outputs=output_grads, inputs=input_tensors_for_bwd, allow_unused=False, retain_graph=True)
-            # exit()
-
-    ## backward, sync after all run
-    torch.cuda.synchronize()
-    start_time = time.time()
-    for _ in range(args.prof_repeat_times[0]):
-        if op_name in ["LanguageModelEmbedding"]:
-            torch.autograd.backward(origin_outputs, grad_tensors=output_grads, retain_graph=True)
-        else:
-            pass
-            # torch.autograd.grad(outputs=origin_outputs, grad_outputs=output_grads, inputs=input_tensors_for_bwd, allow_unused=False, retain_graph=True)
-    torch.cuda.synchronize()
-    end_time = time.time()   
-    sum_bwd_time += end_time - start_time
-    avg_bwd_time = sum_bwd_time * 1000000 / args.prof_repeat_times[0]
-    
-    return avg_fwd_time, avg_bwd_time
 
 
 def profile_op_memory(op, op_name, input_tensors, input_extra_tensors, input_tensors_for_bwd, output_extra_tensors):
@@ -497,10 +449,36 @@ def run_profile(task):
     mbs_list = task["mbs_list"]
     seq_lens_list = task["seq_lens_list"]
     
+    args = get_args()
+    
     config = get_config(model_name, model_size)
     
     tp_size = mpu.get_tensor_model_parallel_world_size()
 
+    if args.prof_core_attention:
+        seq_len_kv_list = task["seq_len_kv_list"]
+        assert seq_len_kv_list is not None, 'prof-core-attention need seq_len_kv_list' 
+        op_name = "TECoreAttention"
+        for mbs in mbs_list:
+            for seq_len_kv in seq_len_kv_list:
+                for seq_len in seq_lens_list:
+                        new_config = copy.deepcopy(config)
+                        new_config.micro_batch_size = mbs 
+                        new_config.seq_length = seq_len
+                        new_config.max_sequence_length = seq_len
+                        new_config.seq_length_kv = seq_len_kv
+                        print_rank0(f"{model_name}_{model_size}.start profile {op_name}. mbs = {mbs}, seq_len_q = {seq_len}, seq_len_kv = {seq_len_kv}, tp = {tp_size} ...")  
+                        try: 
+                            fwd_time, bwd_time, fwd_allocated, fwd_reserved, bwd_allocated, bwd_reserved, input_size, output_size, weight_size = profile_op(op_name, new_config)
+                        except RuntimeError as e:
+                            print(f"RuntimeError: {e}. {traceback.format_exc()}")
+                            fwd_time, bwd_time, fwd_allocated, fwd_reserved, bwd_allocated, bwd_reserved, input_size, output_size, weight_size = 10000000, 10000000, 10000000, 10000000, 10000000, 10000000, 10000000, 10000000, 10000000
+                        print_rank0(f"[results] {op_name}: fwd_compute = {fwd_time:.2f} us, bwd_compute = {bwd_time:.2f} us, fwd_allocated = {fwd_allocated:.2f} MB, fwd_reserved = {fwd_reserved:.2f} MB, bwd_allocated = {bwd_allocated:.2f} MB, bwd_reserved = {bwd_reserved:.2f} MB. input = {input_size:.2f} MB. output = {output_size:.2f} MB. weight = {weight_size:.2f} MB")
+                        data = add_data(data, model_name, model_size, op_name, mbs, seq_len, seq_len_kv, fwd_time, bwd_time, fwd_allocated, fwd_reserved, bwd_allocated, bwd_reserved, input_size, output_size, weight_size)
+                        gc.collect()
+                        dist.barrier()
+
+        
     for op_name in model_prof_configs[model_name]["ops"]:
         for seq_len in seq_lens_list:
             for mbs in mbs_list:
@@ -516,7 +494,7 @@ def run_profile(task):
                     print(f"RuntimeError: {e}. {traceback.format_exc()}")
                     fwd_time, bwd_time, fwd_allocated, fwd_reserved, bwd_allocated, bwd_reserved, input_size, output_size, weight_size = 10000000, 10000000, 10000000, 10000000, 10000000, 10000000, 10000000, 10000000, 10000000
                 print_rank0(f"[results] {op_name}: fwd_compute = {fwd_time:.2f} us, bwd_compute = {bwd_time:.2f} us, fwd_allocated = {fwd_allocated:.2f} MB, fwd_reserved = {fwd_reserved:.2f} MB, bwd_allocated = {bwd_allocated:.2f} MB, bwd_reserved = {bwd_reserved:.2f} MB. input = {input_size:.2f} MB. output = {output_size:.2f} MB. weight = {weight_size:.2f} MB")
-                data = add_data(data, model_name, model_size, op_name, mbs, seq_len, fwd_time, bwd_time, fwd_allocated, fwd_reserved, bwd_allocated, bwd_reserved, input_size, output_size, weight_size)
+                data = add_data(data, model_name, model_size, op_name, mbs, seq_len, seq_len, fwd_time, bwd_time, fwd_allocated, fwd_reserved, bwd_allocated, bwd_reserved, input_size, output_size, weight_size)
                 gc.collect()
                 dist.barrier()
 
@@ -541,7 +519,12 @@ if __name__ == "__main__":
                 micro_batch_sizes = args.prof_mbs_list
             if args.prof_seq_lens_list is None:
                 seq_lens = model_prof_configs[model_name]["seq_len"]
-            all_prof_tasks.append({"model_name": model_name, "model_size": model_size, "mbs_list": micro_batch_sizes, "seq_lens_list": seq_lens})
+            seq_len_q_list = None 
+            seq_len_kv_list = None 
+            if "seq_len_kv" in model_prof_configs[model_name]:
+                seq_len_kv_list = model_prof_configs[model_name]["seq_len_kv"]
+                
+            all_prof_tasks.append({"model_name": model_name, "model_size": model_size, "mbs_list": micro_batch_sizes, "seq_lens_list": seq_lens,"seq_len_kv_list": seq_len_kv_list})
         ## run profiling tasks
     for prof_task in all_prof_tasks:
         run_profile(prof_task)

@@ -1632,4 +1632,5 @@ def _add_profiler_args(parser):
     group.add_argument('--prof-ref-data', type=str, default=None, help='')
     group.add_argument('--prof-mbs-list', nargs='+', type=int, default=None, help='')
     group.add_argument('--prof-seq-lens-list', nargs='+', type=int, default=None, help='')
+    group.add_argument('--prof-core-attention', action='store_true', help='')
     return parser
