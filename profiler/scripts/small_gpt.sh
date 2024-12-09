@@ -1,5 +1,6 @@
 #! /bin/bash
 export PYTHONPATH="/workspace/python/Megatron-LM-0.6.0/:${PYTHONPATH}:/workspace/python/Megatron-LM/"
+export CUDA_DEVICE_MAX_CONNECTIONS=1
 MASTER_ADDR=localhost
 MASTER_PORT=7010
 NNODES=1
@@ -45,6 +46,7 @@ GPT_ARGS="
     --tokenizer-type GPT2BPETokenizer \
     --use-mcore-models \
     --transformer-impl local \
+    --sequence-parallel \
 "
 
 mkdir ${PROFILING_PATH}
@@ -52,7 +54,7 @@ MAX_NUM_GPUS=4
 MODEL_NAME=gpt
 MODEL_SIZE=1_3B
 
-for ((tp_size=1; tp_size<=$MAX_NUM_GPUS; tp_size=tp_size*2))
+for ((tp_size=2; tp_size<=$MAX_NUM_GPUS; tp_size=tp_size*2))
 do
     GPUS_PER_NODE=${tp_size}
     DISTRIBUTED_ARGS="--nproc_per_node $GPUS_PER_NODE --nnodes $NNODES --node_rank $NODE_RANK --master_addr $MASTER_ADDR --master_port $MASTER_PORT"

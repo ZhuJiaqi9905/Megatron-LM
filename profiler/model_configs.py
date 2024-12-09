@@ -17,14 +17,14 @@ model_prof_configs = {
             8
         ], 
         "seq_len": [
-            512,
-            1024,
-            1536,
+            # 512,
+            # 1024,
+            # 1536,
             2048,
-            2560,
-            3072,
-            3584,
-            4096
+            # 2560,
+            # 3072,
+            # 3584,
+            # 4096
             ], 
         "seq_len_kv": [
             # 512,
@@ -38,10 +38,10 @@ model_prof_configs = {
             ],
         "ops": [
                 "LanguageModelEmbedding",
-                "PostProcess",
-                "TELayerNormSelfAttentionDropout", 
-                "TELayerNormMlpDropout", 
-                "TELayerNorm",
+                # "PostProcess",
+                # "TELayerNormSelfAttentionDropout", 
+                # "TELayerNormMlpDropout", 
+                # "TELayerNorm",
                 # "LocalLayerNormSelfAttentionDropout", 
                 # "LocalLayerNormMlpDropout", 
                 ]

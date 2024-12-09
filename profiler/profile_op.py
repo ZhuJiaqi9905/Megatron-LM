@@ -530,5 +530,5 @@ if __name__ == "__main__":
         run_profile(prof_task)
     end_profiling_time = time.time()
     
-    data.to_csv(f"tp_{mpu.get_tensor_model_parallel_world_size()}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv", index=False)
+    data.to_csv(f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_tp_{mpu.get_tensor_model_parallel_world_size()}.csv", index=False)
     print_rank0(f"[TOTAL PROFILING TIME] {end_profiling_time - start_profiling_time:2f} s")
