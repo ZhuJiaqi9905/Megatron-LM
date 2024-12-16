@@ -73,7 +73,7 @@ class GPTModel(LanguageModule):
         # These 2 attributes are needed for TensorRT-LLM export.
         self.max_position_embeddings = max_sequence_length
         self.rotary_percent = rotary_percent
-
+        print(f"vocab size: {self.vocab_size}")
         if self.pre_process:
             self.embedding = LanguageModelEmbedding(
                 config=self.config,
@@ -168,6 +168,8 @@ class GPTModel(LanguageModule):
         # If decoder_input is provided (not None), then input_ids and position_ids are ignored.
         # Otherwise, apply embedding layer on input_ids and position_ids to get decoder_input.
         # Decoder embedding.
+        if self.config.timers:
+            self.config.timers(f"embedding-forward-outside").start()
         if decoder_input is not None:
             pass
         elif self.pre_process:
@@ -184,8 +186,11 @@ class GPTModel(LanguageModule):
                 inference_params, self.decoder, decoder_input, self.config
             )
             rotary_pos_emb = self.rotary_pos_emb(rotary_seq_len)
-
+        if self.config.timers:
+            self.config.timers(f"embedding-forward-outside").stop()
         # Run decoder.
+        if self.config.timers:
+            self.config.timers(f"transformer-forward-outside").start()
         hidden_states = self.decoder(
             hidden_states=decoder_input,
             attention_mask=attention_mask,
@@ -194,7 +199,10 @@ class GPTModel(LanguageModule):
             packed_seq_params=packed_seq_params,
             **(extra_block_kwargs or {}),
         )
-
+        if self.config.timers:
+            self.config.timers(f"transformer-forward-outside").stop()
+        if self.config.timers:
+            self.config.timers(f"post_process-forward-outside").start()
         if not self.post_process:
             return hidden_states
 
@@ -206,10 +214,13 @@ class GPTModel(LanguageModule):
 
         if labels is None:
             # [s b h] => [b s h]
+            if self.config.timers:
+                self.config.timers(f"post_process-forward-outside").stop()
             return logits.transpose(0, 1).contiguous()
 
         loss = self.compute_language_model_loss(labels, logits)
-
+        if self.config.timers:
+            self.config.timers(f"post_process-forward-outside").stop()
         return loss
 
     def sharded_state_dict(

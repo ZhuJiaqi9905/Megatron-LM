@@ -347,7 +347,7 @@ def infer_data_size(op):
         input_shape = op.input_extra_tensors_info[input_extra_name]["shape"]
         input_extra_dict[input_extra_name] = input_shape
         ## current workaround for masks.
-        if "mask" not in input_extra_name: # we do not need to transfer attention_mask to other stage
+        if "mask" not in input_extra_name and "label" not in input_extra_name: # we do not need to transfer attention_mask to other stage
             sum_input_extra_size += np.prod(input_shape) * DATA_BASE
 
     ## infer output extra tensor size

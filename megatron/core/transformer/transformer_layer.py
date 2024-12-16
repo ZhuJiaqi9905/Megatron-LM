@@ -167,13 +167,15 @@ class TransformerLayer(MegatronModule, BaseTransformerLayer):
         packed_seq_params=None,
     ):
         # hidden_states: [s, b, h]
-
+        if self.config.timers:
+            self.config.timers(f"attention-forward-outside").start()   
         # Residual connection.
         residual = hidden_states
 
         # Optional Input Layer norm
         input_layernorm_output = self.input_layernorm(hidden_states)
-
+        if self.config.timers is not None:
+            self.config.timers(f"self-attention-forward-outside").start()
         # Self attention.
         attention_output_with_bias = self.self_attention(
             input_layernorm_output,
@@ -182,7 +184,8 @@ class TransformerLayer(MegatronModule, BaseTransformerLayer):
             rotary_pos_emb=rotary_pos_emb,
             packed_seq_params=packed_seq_params,
         )
-
+        if self.config.timers is not None:
+            self.config.timers(f"self-attention-forward-outside").stop()
         # TODO: could we move `bias_dropout_add_exec_handler` itself
         # inside the module provided in the `bias_dropout_add_spec` module?
         with self.bias_dropout_add_exec_handler():
@@ -216,7 +219,10 @@ class TransformerLayer(MegatronModule, BaseTransformerLayer):
 
         # Residual connection.
         residual = hidden_states
-
+        if self.config.timers:
+            self.config.timers(f"attention-forward-outside").stop()  
+        if self.config.timers:
+            self.config.timers(f"mlp-forward-outside").start()        
         # Optional Layer norm post the cross-attention.
         pre_mlp_layernorm_output = self.pre_mlp_layernorm(hidden_states)
 
@@ -239,7 +245,8 @@ class TransformerLayer(MegatronModule, BaseTransformerLayer):
         output = make_viewless_tensor(
             inp=hidden_states, requires_grad=hidden_states.requires_grad, keep_graph=True
         )
-
+        if self.config.timers:
+            self.config.timers(f"mlp-forward-outside").stop()   
         return output, context
 
     def sharded_state_dict(

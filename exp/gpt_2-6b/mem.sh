@@ -15,12 +15,12 @@ NODE_RANK=0
 WORLD_SIZE=$(($GPUS_PER_NODE*$NNODES))
 
 # fixed Model related configuration here, pls not overlap with json config
-HIDDEN_SIZE=2048
+HIDDEN_SIZE=2560
 NUM_ATTENTION_HEADS=32
-NUM_LAYERS=24
-SEQ_LENGTH=2048
+NUM_LAYERS=32
+SEQ_LENGTH=8192
 MAX_POSITION_EMBEDDINGS=$SEQ_LENGTH
-MICRO_BATCH_SIZE=8
+MICRO_BATCH_SIZE=2
 GLOBAL_BATCH_SIZE=256
 
 
@@ -69,6 +69,7 @@ GPT_ARGS="
     --use-mcore-models \
     --transformer-impl transformer_engine \
     --sequence-parallel \
+    --recompute-granularity selective \
 "
 
 OUTPUT_ARGS="

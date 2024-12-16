@@ -655,7 +655,14 @@ def training_log(loss_dict, total_loss_dict, learning_rate, decoupled_learning_r
         'optimizer-count-zeros',
         'optimizer-inner-step',
         'optimizer-copy-main-to-model-params',
-        'optimizer']
+        'optimizer',
+        'embedding-forward-outside',
+        "attention-forward-outside",
+        "post_process-forward-outside"
+        "transformer-forward-outside",
+        "mlp-forward-outside",
+        "self-attention-forward-outside"
+        ]
 
     # Calculate batch size.
     batch_size = args.micro_batch_size * args.data_parallel_size * \
@@ -910,7 +917,8 @@ def train(forward_step_func, model, optimizer, opt_param_scheduler,
 
     # Setup some training config params
     config.grad_scale_func = optimizer.scale_loss
-    config.timers = timers
+    # config.timers = timers
+    config.timers = None
     if isinstance(model[0], DDP) and args.overlap_grad_reduce:
         assert config.no_sync_func is None, \
             ('When overlap_grad_reduce is True, config.no_sync_func must be None; '

@@ -6,7 +6,7 @@ PP=1
 
 
 export CUDA_DEVICE_MAX_CONNECTIONS=1
-GPUS_PER_NODE=1
+GPUS_PER_NODE=4
 # Change for multinode config
 MASTER_ADDR=localhost
 MASTER_PORT=7010
@@ -20,9 +20,8 @@ NUM_ATTENTION_HEADS=32
 NUM_LAYERS=24
 SEQ_LENGTH=2048
 MAX_POSITION_EMBEDDINGS=$SEQ_LENGTH
-MICRO_BATCH_SIZE=8
-GLOBAL_BATCH_SIZE=256
-
+MICRO_BATCH_SIZE=2
+GLOBAL_BATCH_SIZE=1024
 
 # GLOBAL_BATCH_SIZE=$((128*1024/${SEQ_LENGTH}))
 
@@ -68,7 +67,6 @@ GPT_ARGS="
     --tokenizer-type GPT2BPETokenizer \
     --use-mcore-models \
     --transformer-impl transformer_engine \
-    --sequence-parallel \
 "
 
 OUTPUT_ARGS="
@@ -80,11 +78,9 @@ OUTPUT_ARGS="
     --eval-iters 10 \
 "
 
-
-
 export USE_FLASH_ATTN=1 && \
 torchrun $DISTRIBUTED_ARGS \
-    report_theoretical_memory.py \
+    pretrain_gpt.py \
     $GPT_ARGS \
     $DATA_ARGS \
     $OUTPUT_ARGS \
