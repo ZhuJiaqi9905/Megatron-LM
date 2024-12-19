@@ -2,8 +2,8 @@ import itertools
 import os 
 import subprocess 
 
-tp_values = [2**i for i in range(4)]
-micro_batch_sizes = [2**i for i in range(5)]
+tp_values = [2**i for i in range(1, 4)]
+micro_batch_sizes = [2**i for i in range(3)]
 sequence_lengths = [1024 * (2**i) for i in range(2, 4)]
 
 

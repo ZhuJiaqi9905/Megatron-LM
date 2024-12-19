@@ -7,7 +7,7 @@ MICRO_BATCH_SIZE=${2}
 SEQ_LENGTH=${3}
 
 
-GPUS_PER_NODE=4
+GPUS_PER_NODE=8
 PP=$((${GPUS_PER_NODE} / ${TP}))
 
 LOG_PATH=./logs/aws/

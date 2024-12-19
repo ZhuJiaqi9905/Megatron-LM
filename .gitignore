@@ -9,3 +9,6 @@ logs
 .vscode
 *.csv
 *.log
+!logs/
+!logs/important/
+!logs/important/*.log
