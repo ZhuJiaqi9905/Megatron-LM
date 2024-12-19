@@ -316,7 +316,7 @@ def infer_data_size(op):
     '''
     Infer each op's input/output tensor shape, which will be used to generate input/output tensor during the profiling.
     '''
-
+    tp_size = mpu.get_tensor_model_parallel_world_size()
     prev_extra_size = 0
 
     op = unwrap_model(op, (DDP, Float16Module))
@@ -327,10 +327,16 @@ def infer_data_size(op):
     sum_output_size = 0
     input_shape_dict = {}
     input_extra_dict = {}
-
+    import pdb 
+    # if torch.distributed.get_rank() == 0:
+    #     pdb.set_trace()
     ## infer input tensor size
     for input_name in op.input_tensors_info:
         input_shape = op.input_tensors_info[input_name]["shape"]
+        tp_split_dim = op.input_tensors_info[input_name]["tp_split_dim"] 
+        if tp_split_dim != -1:
+            input_shape = copy.deepcopy(input_shape)
+            input_shape[tp_split_dim] = input_shape[tp_split_dim] // tp_size
         input_shape_dict[input_name] = input_shape
         sum_input_size += np.prod(input_shape) * DATA_BASE
     sum_input_size += prev_extra_size
@@ -338,6 +344,10 @@ def infer_data_size(op):
     ## infer output tensor size
     for output_name in op.output_tensors_info:
         output_shape = op.output_tensors_info[output_name]["shape"]
+        tp_split_dim = op.output_tensors_info[output_name]["tp_split_dim"] 
+        if tp_split_dim != -1:
+            output_shape = copy.deepcopy(output_shape)
+            output_shape[tp_split_dim] = output_shape[tp_split_dim] // tp_size
         sum_output_size += np.prod(output_shape) * DATA_BASE
 
     ## infer input extra tensor size
@@ -345,6 +355,9 @@ def infer_data_size(op):
 
     for input_extra_name in op.input_extra_tensors_info:
         input_shape = op.input_extra_tensors_info[input_extra_name]["shape"]
+        tp_split_dim = op.input_extra_tensors_info[input_extra_name]["tp_split_dim"] 
+        if tp_split_dim != -1:
+            input_shape[tp_split_dim] = input_shape[tp_split_dim] // tp_size
         input_extra_dict[input_extra_name] = input_shape
         ## current workaround for masks.
         if "mask" not in input_extra_name and "label" not in input_extra_name: # we do not need to transfer attention_mask to other stage
@@ -354,6 +367,10 @@ def infer_data_size(op):
     sum_output_extra_size = 0
     for output_extra_name in op.output_extra_tensors_info:
         output_shape = op.output_extra_tensors_info[output_extra_name]["shape"]
+        tp_split_dim = op.output_extra_tensors_info[output_extra_name]["tp_split_dim"] 
+        if tp_split_dim != -1:
+            output_shape = copy.deepcopy(output_shape)
+            output_shape[tp_split_dim] = output_shape[tp_split_dim] // tp_size
         sum_output_extra_size += np.prod(output_shape) * DATA_BASE
 
     current_extra_size = prev_extra_size + sum_output_extra_size - sum_input_extra_size
@@ -361,6 +378,7 @@ def infer_data_size(op):
     sum_output_size += current_extra_size
     prev_extra_size = current_extra_size
 
+    # torch.distributed.barrier()
     
     return sum_input_size, sum_output_size, weight_size, input_shape_dict, input_extra_dict
 
@@ -421,6 +439,7 @@ def get_inputs(input_shape_dict: dict, input_extra_dict: dict, params_dtype: str
     
     for input_name in input_shape_dict:
         input_shape = input_shape_dict[input_name]
+
         if input_name in ["input_ids", "position_ids"]:
             inputs[input_name] = torch.randint(0, input_shape[1], input_shape, requires_grad=False, device=torch.cuda.current_device(), dtype=torch.long)
         else:
@@ -530,5 +549,5 @@ if __name__ == "__main__":
         run_profile(prof_task)
     end_profiling_time = time.time()
     
-    data.to_csv(f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_tp_{mpu.get_tensor_model_parallel_world_size()}.csv", index=False)
+    data.to_csv(f"{'.' if args.prof_path is None else args.prof_path}/{datetime.now().strftime('%Y%m%d_%H%M%S')}_tp_{mpu.get_tensor_model_parallel_world_size()}.csv", index=False)
     print_rank0(f"[TOTAL PROFILING TIME] {end_profiling_time - start_profiling_time:2f} s")

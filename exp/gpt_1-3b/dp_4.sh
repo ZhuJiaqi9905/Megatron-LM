@@ -4,9 +4,9 @@
 TP=1
 PP=1
 
-
+export CUDA_VISIBLE_DEVICES=1,2,3
 export CUDA_DEVICE_MAX_CONNECTIONS=1
-GPUS_PER_NODE=4
+GPUS_PER_NODE=2
 # Change for multinode config
 MASTER_ADDR=localhost
 MASTER_PORT=7010

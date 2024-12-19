@@ -299,7 +299,8 @@ class MixedPrecisionOptimizer(MegatronOptimizer):
     @torch.no_grad()
     def step(self):
 
-        timers = self.config.timers
+        # timers = self.config.timers
+        timers = None
 
         # Copy gradients from model params to main params.
         if timers is not None:

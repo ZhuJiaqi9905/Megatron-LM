@@ -718,7 +718,9 @@ class OpTELayerNormPostProcess(OpModule):
         if type(input_tensors) is list:
             input_tensors = input_tensors[0]
         hidden_states: Tensor = input_tensors["hidden_states"]
-
+        # import pdb
+        # if torch.distributed.get_rank() == 0:
+        #     pdb.set_trace()
         # Optional Layer norm post the cross-attention.
         final_layernorm_output = self.final_layernorm(hidden_states)
 
@@ -735,9 +737,11 @@ class OpTELayerNormPostProcess(OpModule):
         else:
             labels = labels.transpose(0, 1).contiguous()
             if self.fp16_lm_cross_entropy:
+                
                 assert output.dtype == torch.half
                 loss = tensor_parallel.vocab_parallel_cross_entropy(output, labels)
             else:
+                # torch.distributed.barrier()
                 loss = tensor_parallel.vocab_parallel_cross_entropy(output.float(), labels)
             loss = loss.transpose(0, 1).contiguous()
 
@@ -963,7 +967,6 @@ class OpTELayerNormSelfAttentionDropout(OpModule):
         if type(input_tensors) is list:
             input_tensors = input_tensors[0]
         hidden_states: Tensor = input_tensors["hidden_states"]
-
         rotary_pos_emb = input_tensors.get("rotary_pos_emb", None)
         inference_params = input_tensors.get("inference_params", None)
         packed_seq_params = input_tensors.get("packed_seq_params", None)

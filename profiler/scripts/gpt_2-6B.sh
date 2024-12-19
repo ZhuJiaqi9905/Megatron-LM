@@ -7,10 +7,10 @@ NNODES=1
 NODE_RANK=0
 
 RUNTIME_PATH=$(pwd)/
-PROFILING_PATH=${RUNTIME_PATH}profiled-time-miniset/
+PROFILING_PATH=${RUNTIME_PATH}/aws/
 
-VOCAB_FILE=./vocabs/gpt2-vocab.json
-MERGE_FILE=./vocabs/gpt2-merges.txt
+VOCAB_FILE=/workspace/python/Megatron-LM/vocabs/gpt2-vocab.json
+MERGE_FILE=/workspace/python/Megatron-LM/vocabs/gpt2-merges.txt
 #  num_layers, seq_len, hidden_size, ffn_hidden_size, num_attention_heads, kv_channels, vocab_size, params_dtype are fake.
 HIDDEN_SIZE=1024
 NUM_ATTENTION_HEADS=16
@@ -48,13 +48,12 @@ GPT_ARGS="
     --transformer-impl local \
     --sequence-parallel \
 "
-
 mkdir ${PROFILING_PATH}
 MAX_NUM_GPUS=4
 MODEL_NAME=gpt
-MODEL_SIZE=2_6B
+MODEL_SIZE=2-6B
 
-for ((tp_size=1; tp_size<=$MAX_NUM_GPUS; tp_size=tp_size*2))
+for ((tp_size=4; tp_size<=$MAX_NUM_GPUS; tp_size=tp_size*2))
 do
     GPUS_PER_NODE=${tp_size}
     DISTRIBUTED_ARGS="--nproc_per_node $GPUS_PER_NODE --nnodes $NNODES --node_rank $NODE_RANK --master_addr $MASTER_ADDR --master_port $MASTER_PORT"
@@ -72,7 +71,7 @@ do
         --prof-model-size $MODEL_SIZE \
         --prof-warmup-times 5 \
         --prof-repeat-times 50 \
-        2>&1 | tee ${PROFILING_PATH}profiling_${MODEL_NAME}_op_tp${tp_size}.log
+        2>&1 | tee ${PROFILING_PATH}profiling_${MODEL_NAME}_${MODEL_SIZE}_op_tp${tp_size}.log
 
     echo [TIME] after profiling tp_size $tp_size : $(date '+%Y-%m-%d-%H-%M-%S') >> ${PROFILING_PATH}profiling_${MODEL_NAME}.log
 done
