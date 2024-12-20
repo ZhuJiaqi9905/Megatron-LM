@@ -13,5 +13,5 @@ slurm*
 !logs/important/a10g/
 !logs/important/l40s/
 !logs/important/*.log
-!logs/important/a10g/*.log
-!logs/important/l40s/*.log
+!logs/important/**/*.log
+!profiler/aws/**/*.csv
