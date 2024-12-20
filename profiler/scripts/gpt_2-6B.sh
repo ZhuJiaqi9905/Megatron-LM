@@ -7,10 +7,10 @@ NNODES=1
 NODE_RANK=0
 
 RUNTIME_PATH=$(pwd)/
-PROFILING_PATH=${RUNTIME_PATH}/aws/l40s/
+PROFILING_PATH=${RUNTIME_PATH}/aws/a10g/
 
-VOCAB_FILE=/workspace/Megatron-LM/vocabs/gpt2-vocab.json
-MERGE_FILE=/workspace/Megatron-LM/vocabs/gpt2-merges.txt
+VOCAB_FILE=../vocabs/gpt2-vocab.json
+MERGE_FILE=../vocabs/gpt2-merges.txt
 #  num_layers, seq_len, hidden_size, ffn_hidden_size, num_attention_heads, kv_channels, vocab_size, params_dtype are fake.
 HIDDEN_SIZE=1024
 NUM_ATTENTION_HEADS=16
