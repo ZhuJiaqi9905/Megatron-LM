@@ -5,10 +5,11 @@ build
 *.egg-info
 *~
 slurm*
-logs
 .vscode
 *.csv
 *.log
 !logs/
 !logs/important/
+!logs/important/a10g/
 !logs/important/*.log
+!logs/important/a10g/*.log
