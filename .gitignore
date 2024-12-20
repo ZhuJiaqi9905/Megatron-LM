@@ -11,5 +11,7 @@ slurm*
 !logs/
 !logs/important/
 !logs/important/a10g/
+!logs/important/l40s/
 !logs/important/*.log
 !logs/important/a10g/*.log
+!logs/important/l40s/*.log
