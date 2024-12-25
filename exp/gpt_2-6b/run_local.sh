@@ -1,5 +1,7 @@
 #!/bin/bash
-# export CUDA_VISIBLE_DEVICES=1,2,3
+# export CUDA_VISIBLE_DEVICES=4,5,6,7
+export NCCL_DEBUG=INFO
+export CUDA_VISIBLE_DEVICES=0,1,2,3
 export CUDA_DEVICE_MAX_CONNECTIONS=1
 
 TP=${1}
@@ -7,7 +9,7 @@ MICRO_BATCH_SIZE=${2}
 SEQ_LENGTH=${3}
 
 
-GPUS_PER_NODE=8
+GPUS_PER_NODE=4
 PP=$((${GPUS_PER_NODE} / ${TP}))
 
 LOG_PATH=./logs/aws/
@@ -76,7 +78,7 @@ GPT_ARGS="
 OUTPUT_ARGS="
     --log-interval 1 \
     --timing-log-level 1 \
-    --timing-log-option minmax \
+    --timing-log-option all \
     --save-interval 10000 \
     --eval-interval 1000 \
     --eval-iters 1 \
