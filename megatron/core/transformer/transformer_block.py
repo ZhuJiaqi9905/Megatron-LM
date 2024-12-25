@@ -134,6 +134,29 @@ class TransformerBlock(MegatronModule):
 
         self._build_layers()
         self.num_layers_per_pipeline_rank = len(self.layers)
+        self.register_transformer_layer_hook()
+
+    def register_transformer_layer_hook(self):
+        def forward_pre_hook(module, args):
+            if self.config.timers is not None:
+                self.config.timers('transformer-forward', log_level=1).start()
+            #     print(f"timer is not None")
+            # else:
+            #     print(f"timer is None")
+        def forward_hook(module, args, output):
+            # pass
+            if self.config.timers is not None:
+                self.config.timers('transformer-forward', log_level=1).stop()
+        def backward_pre_hook(module, grad_input, grad_output):
+            if self.config.timers is not None:
+                self.config.timers('transformer-backward', log_level=1).start()
+        def backward_hook(module, grad_input, grad_output):
+            if self.config.timers is not None:
+                self.config.timers('transformer-backward').stop()
+        self.layers[1].register_forward_pre_hook(forward_pre_hook)
+        self.layers[1].register_forward_hook(forward_hook)
+        self.layers[2].register_full_backward_hook(backward_pre_hook)
+        self.layers[1].register_full_backward_hook(backward_hook)
 
     def _build_layers(self):
         # Transformer layers.

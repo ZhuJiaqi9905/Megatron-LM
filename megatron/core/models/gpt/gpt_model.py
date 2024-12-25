@@ -57,7 +57,7 @@ class GPTModel(LanguageModule):
 
         self.transformer_layer_spec: ModuleSpec = transformer_layer_spec
         self.vocab_size = vocab_size
-        print(f"vocab_size: {self.vocab_size}")
+        # print(f"vocab_size: {self.vocab_size}")
         self.max_sequence_length = max_sequence_length
         self.pre_process = pre_process
         self.post_process = post_process
@@ -73,7 +73,7 @@ class GPTModel(LanguageModule):
         # These 2 attributes are needed for TensorRT-LLM export.
         self.max_position_embeddings = max_sequence_length
         self.rotary_percent = rotary_percent
-        print(f"vocab size: {self.vocab_size}")
+        # print(f"vocab size: {self.vocab_size}")
         if self.pre_process:
             self.embedding = LanguageModelEmbedding(
                 config=self.config,
@@ -131,6 +131,7 @@ class GPTModel(LanguageModule):
 
         if self.pre_process or self.post_process:
             self.setup_embeddings_and_output_layer()
+        # print(f"[rank{torch.distributed.get_rank()}] pre_process: {pre_process}. post_process: {post_process}. share_embeddings_and_output_weights:{share_embeddings_and_output_weights}")
 
     def set_input_tensor(self, input_tensor: Tensor) -> None:
         """Sets input tensor to the model.

@@ -279,7 +279,7 @@ def get_megatron_optimizer(
 
     if not torch.distributed.is_initialized() or torch.distributed.get_rank() == 0:
         logger.info(f'Setting up optimizer with {config}')
-
+    print(f"rank[{torch.distributed.get_rank()}] model_chunk_len: {len(model_chunks)}")
     # Collect param groups.
     param_groups = _get_param_groups(
         model_chunks,

@@ -656,13 +656,8 @@ def training_log(loss_dict, total_loss_dict, learning_rate, decoupled_learning_r
         'optimizer-inner-step',
         'optimizer-copy-main-to-model-params',
         'optimizer',
-        'embedding-forward-outside',
-        "attention-forward-outside",
-        "post_process-forward-outside"
-        "transformer-forward-outside",
-        "mlp-forward-outside",
-        "self-attention-forward-outside",
-        'transformer-layer-forward'
+        'transformer-forward',
+        'transformer-backward'
         ]
 
     # Calculate batch size.

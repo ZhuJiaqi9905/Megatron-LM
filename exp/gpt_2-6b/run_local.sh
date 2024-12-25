@@ -1,12 +1,17 @@
 #!/bin/bash
-
-
-TP=1
-PP=1
-
-
+# export CUDA_VISIBLE_DEVICES=1,2,3
 export CUDA_DEVICE_MAX_CONNECTIONS=1
-GPUS_PER_NODE=1
+
+TP=${1}
+MICRO_BATCH_SIZE=${2}
+SEQ_LENGTH=${3}
+
+
+GPUS_PER_NODE=8
+PP=$((${GPUS_PER_NODE} / ${TP}))
+
+LOG_PATH=./logs/aws/
+mkdir -p ${LOG_PATH}
 # Change for multinode config
 MASTER_ADDR=localhost
 MASTER_PORT=7010
@@ -15,20 +20,17 @@ NODE_RANK=0
 WORLD_SIZE=$(($GPUS_PER_NODE*$NNODES))
 
 # fixed Model related configuration here, pls not overlap with json config
-HIDDEN_SIZE=4096
+MODEL_NAME=GPT_2-6B
+HIDDEN_SIZE=2560
 NUM_ATTENTION_HEADS=32
 NUM_LAYERS=32
-SEQ_LENGTH=$((64*1024))
-MAX_POSITION_EMBEDDINGS=$SEQ_LENGTH
-MICRO_BATCH_SIZE=1
+MAX_POSITION_EMBEDDINGS=${SEQ_LENGTH}
 GLOBAL_BATCH_SIZE=${MICRO_BATCH_SIZE}
 
 
-# GLOBAL_BATCH_SIZE=$((128*1024/${SEQ_LENGTH}))
 
-
-VOCAB_FILE=/workspace/file/vocabs/gpt2-vocab.json
-MERGE_FILE=/workspace/file/vocabs/gpt2-merges.txt
+VOCAB_FILE=./vocabs/gpt2-vocab.json
+MERGE_FILE=./vocabs/gpt2-merges.txt
 
 
 DISTRIBUTED_ARGS="
@@ -57,7 +59,7 @@ GPT_ARGS="
     --micro-batch-size $MICRO_BATCH_SIZE \
     --global-batch-size $GLOBAL_BATCH_SIZE \
     --lr 0.15 \
-    --train-iters 500 \
+    --train-iters 4 \
     --lr-decay-iters 320000 \
     --lr-decay-style cosine \
     --min-lr 1.0e-5 \
@@ -77,15 +79,14 @@ OUTPUT_ARGS="
     --timing-log-option all \
     --save-interval 10000 \
     --eval-interval 1000 \
-    --eval-iters 10 \
+    --eval-iters 1 \
 "
-
-
 
 export USE_FLASH_ATTN=1 && \
 torchrun $DISTRIBUTED_ARGS \
-    report_theoretical_memory.py \
+    pretrain_gpt.py \
     $GPT_ARGS \
     $DATA_ARGS \
     $OUTPUT_ARGS \
     --distributed-backend nccl \
+    2>&1 | tee "${LOG_PATH}/$(date '+%Y-%m-%d-%H-%M-%S')_${MODEL_NAME}_TP${TP}_MBS${MICRO_BATCH_SIZE}_SEQ${SEQ_LENGTH}.log"
