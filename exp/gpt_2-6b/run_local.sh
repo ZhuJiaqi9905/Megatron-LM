@@ -75,8 +75,8 @@ GPT_ARGS="
 
 OUTPUT_ARGS="
     --log-interval 1 \
-    --timing-log-level 2 \
-    --timing-log-option all \
+    --timing-log-level 1 \
+    --timing-log-option minmax \
     --save-interval 10000 \
     --eval-interval 1000 \
     --eval-iters 1 \

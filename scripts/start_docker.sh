@@ -1,0 +1,1 @@
+docker run --gpus all -d -v home/ubuntu/code/python/Hetaceso:/workspace/Hetaceso -v home/ubuntu/code/python/profile:/workspace/profile -v home/ubuntu/code/python/Megatron-LM:/workspace/Megatron-LM  --privileged=true --net=host --shm-size=300g  --ulimit memlock=-1 --name hetaceso  whatcanyousee/hetaceso  sleep infinity

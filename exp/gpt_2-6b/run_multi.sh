@@ -1,23 +1,24 @@
 #!/bin/bash
 # export CUDA_VISIBLE_DEVICES=1,2,3
 export CUDA_DEVICE_MAX_CONNECTIONS=1
+NNODES=2
+MASTER_ADDR=
+WORLD_SIZE=$(($GPUS_PER_NODE*$NNODES))
+
 
 TP=${1}
 MICRO_BATCH_SIZE=${2}
 SEQ_LENGTH=${3}
+NODE_RANK=${4}
 
 
 GPUS_PER_NODE=8
-PP=${4}
+PP=$(($WORLD_SIZE / $TP))
 
 LOG_PATH=./logs/aws/
 mkdir -p ${LOG_PATH}
 # Change for multinode config
-MASTER_ADDR=${5}
 MASTER_PORT=7010
-NNODES=${6}
-NODE_RANK=${7}
-WORLD_SIZE=$(($GPUS_PER_NODE*$NNODES))
 
 # fixed Model related configuration here, pls not overlap with json config
 MODEL_NAME=GPT_2-6B
