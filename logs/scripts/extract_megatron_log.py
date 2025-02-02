@@ -52,11 +52,11 @@ def extract_elapsed_time(line: str) -> Optional[float]:
 # Function to parse the log file and extract the desired information
 def parse_log_file(file_path: str):
     data = {
-        'total_time_ms': [],
-        'forward_backward_time_ms': [],
+        # 'total_time_ms': [],
+        # 'forward_backward_time_ms': [],
         'batch_generator_time_ms': [],
-        'layernorm_grads_all_reduce_time_ms': [],
-        'embedding_grads_all_reduce_time_ms': [],
+        # 'layernorm_grads_all_reduce_time_ms': [],
+        # 'embedding_grads_all_reduce_time_ms': [],
         'optimizer_time_ms': [],
     }
 
@@ -64,16 +64,16 @@ def parse_log_file(file_path: str):
         lines = file.readlines()
     # Extract the relevant values from the log content
     for line in lines:
-        if 'elapsed time per iteration (ms): ' in line:
-            data['total_time_ms'].append(extract_elapsed_time(line))
-        elif 'forward-backward' in line:
-            data['forward_backward_time_ms'].append(extract_floats(line)[1])
-        elif 'batch-generator' in line:
+        # if 'elapsed time per iteration (ms): ' in line:
+        #     data['total_time_ms'].append(extract_elapsed_time(line))
+        # if 'forward-backward' in line:
+        #     data['forward_backward_time_ms'].append(extract_floats(line)[1])
+        if 'batch-generator' in line:
             data['batch_generator_time_ms'].append(extract_floats(line)[1])
-        elif 'layernorm-grads-all-reduce' in line:
-            data['layernorm_grads_all_reduce_time_ms'].append(extract_floats(line)[1])
-        elif 'embedding-grads-all-reduce' in line:
-            data['embedding_grads_all_reduce_time_ms'].append(extract_floats(line)[1])
+        # elif 'layernorm-grads-all-reduce' in line:
+        #     data['layernorm_grads_all_reduce_time_ms'].append(extract_floats(line)[1])
+        # elif 'embedding-grads-all-reduce' in line:
+        #     data['embedding_grads_all_reduce_time_ms'].append(extract_floats(line)[1])
         elif '    optimizer ....' in line:
             data['optimizer_time_ms'].append(extract_floats(line)[1])
     # print(f"{file_path}: {data}")
@@ -328,7 +328,7 @@ def gen_metis_profile_files(mega_res:List[Dict], csv_folder: str, device: str):
         df = pd.read_csv(f'{csv_folder}/{model}_tp_{tp}.csv') 
         embedding_compute, transformer_compute, post_process_compute = get_df_layer_compute(df, model.split('_')[1], mbs, seq_len)
         result['execution_time']['layer_compute_total_ms'] = [embedding_compute] + [transformer_compute] * (result['model']['num_layers'] - 2) + [post_process_compute]
-
+        result['execution_time']['forward_backward_time_ms'] = sum(result['execution_time']['layer_compute_total_ms'])
         embedding_mem, transformer_mem, post_process_mem = get_df_layer_memory(df, model.split('_')[1], mbs, seq_len)
         result['execution_memory']['layer_memory_total_mb'] = [embedding_mem] + [transformer_mem]* (result['model']['num_layers'] - 2) + [post_process_mem] 
         result['execution_memory']['total_memory'] = sum(result['execution_memory']['layer_memory_total_mb'])

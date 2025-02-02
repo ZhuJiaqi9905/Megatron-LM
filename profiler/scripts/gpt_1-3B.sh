@@ -52,7 +52,7 @@ GPT_ARGS="
 mkdir -p ${PROFILING_PATH}
 MAX_NUM_GPUS=8
 MODEL_NAME=gpt
-MODEL_SIZE=2-6B
+MODEL_SIZE=1-3B
 
 for ((tp_size=1; tp_size<=$MAX_NUM_GPUS; tp_size=tp_size*2))
 do

@@ -43,11 +43,7 @@
         }
     },
     "execution_time": {
-        "total_time_ms": 2389.0333333333333,
-        "forward_backward_time_ms": 2227.4500000000003,
         "batch_generator_time_ms": 10.263333333333334,
-        "layernorm_grads_all_reduce_time_ms": 0.04666666666666667,
-        "embedding_grads_all_reduce_time_ms": 136.26000000000002,
         "optimizer_time_ms": 15.063333333333333,
         "layer_compute_total_ms": [
             4.622356414794922,
@@ -84,7 +80,8 @@
             62.67986083984375,
             62.67986083984375,
             113.988857421875
-        ]
+        ],
+        "forward_backward_time_ms": 2124.3667607116695
     },
     "execution_memory": {
         "layer_memory_total_mb": [

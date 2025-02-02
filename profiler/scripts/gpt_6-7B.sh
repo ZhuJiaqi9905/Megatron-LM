@@ -12,7 +12,7 @@ PROFILING_PATH=${RUNTIME_PATH}/aws/a10g/
 
 VOCAB_FILE=../vocabs/gpt2-vocab.json
 MERGE_FILE=../vocabs/gpt2-merges.txt
-#  num_layers, seq_len, hidden_size, ffn_hidden_size, num_attention_heads, kv_channels, vocab_size, params_dtype are fake.
+#  num_layers, seq_len, hidden_size, ffn_hidden_size, num_attention_heads, kv_channels, vocab_size, params_dtype,micro-batch-size, global-batch-size are fake.
 HIDDEN_SIZE=1024
 NUM_ATTENTION_HEADS=16
 SEQ_LENGTH=2048
@@ -52,7 +52,7 @@ GPT_ARGS="
 mkdir -p ${PROFILING_PATH}
 MAX_NUM_GPUS=8
 MODEL_NAME=gpt
-MODEL_SIZE=2-6B
+MODEL_SIZE=6-7B
 
 for ((tp_size=1; tp_size<=$MAX_NUM_GPUS; tp_size=tp_size*2))
 do
