@@ -1,5 +1,5 @@
 #! /bin/bash
-# export CUDA_VISIBLE_DEVICES="0,1,2,3"
+export CUDA_VISIBLE_DEVICES="4,5,6,7"
 export PYTHONPATH="/workspace/python/Megatron-LM-0.6.0/:${PYTHONPATH}:/workspace/python/Megatron-LM/:/workspace/Megatron-LM/"
 export CUDA_DEVICE_MAX_CONNECTIONS=1
 MASTER_ADDR=localhost
@@ -50,11 +50,11 @@ GPT_ARGS="
     --sequence-parallel \
 "
 mkdir -p ${PROFILING_PATH}
-MAX_NUM_GPUS=8
+MAX_NUM_GPUS=4
 MODEL_NAME=gpt
 MODEL_SIZE=2-6B
 
-for ((tp_size=1; tp_size<=$MAX_NUM_GPUS; tp_size=tp_size*2))
+for ((tp_size=2; tp_size<=$MAX_NUM_GPUS; tp_size=tp_size*2))
 do
     GPUS_PER_NODE=${tp_size}
     DISTRIBUTED_ARGS="--nproc_per_node $GPUS_PER_NODE --nnodes $NNODES --node_rank $NODE_RANK --master_addr $MASTER_ADDR --master_port $MASTER_PORT"
@@ -70,8 +70,8 @@ do
         --prof-path $PROFILING_PATH \
         --prof-model-name $MODEL_NAME \
         --prof-model-size $MODEL_SIZE \
-        --prof-warmup-times 5 \
-        --prof-repeat-times 10 \
+        --prof-warmup-times 1 \
+        --prof-repeat-times 5 \
         2>&1 | tee ${PROFILING_PATH}profiling_${MODEL_NAME}_${MODEL_SIZE}_op_tp${tp_size}.log
 
     echo [TIME] after profiling tp_size $tp_size : $(date '+%Y-%m-%d-%H-%M-%S') >> ${PROFILING_PATH}profiling_${MODEL_NAME}.log

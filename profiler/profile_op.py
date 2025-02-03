@@ -441,7 +441,7 @@ def get_inputs(input_shape_dict: dict, input_extra_dict: dict, params_dtype: str
         input_shape = input_shape_dict[input_name]
 
         if input_name in ["input_ids", "position_ids"]:
-            inputs[input_name] = torch.randint(0, input_shape[1], input_shape, requires_grad=False, device=torch.cuda.current_device(), dtype=torch.long)
+            inputs[input_name] = torch.randint(0, 8192, input_shape, requires_grad=False, device=torch.cuda.current_device(), dtype=torch.long)
         else:
             inputs[input_name] = torch.rand(input_shape, requires_grad=True, device=torch.cuda.current_device(), dtype=params_dtype)        
 
