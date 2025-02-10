@@ -1,5 +1,5 @@
-#! /bin/bash
-# export CUDA_VISIBLE_DEVICES="4,5,6,7"
+#!/bin/bash
+export CUDA_VISIBLE_DEVICES="4,5,6,7"
 export PYTHONPATH="/workspace/python/Megatron-LM-0.6.0/:${PYTHONPATH}:/workspace/python/Megatron-LM/:/workspace/Megatron-LM/"
 export CUDA_DEVICE_MAX_CONNECTIONS=1
 MASTER_ADDR=localhost
@@ -8,7 +8,7 @@ NNODES=1
 NODE_RANK=0
 
 RUNTIME_PATH=$(pwd)/
-PROFILING_PATH=${RUNTIME_PATH}/aws/a10g/
+PROFILING_PATH=${RUNTIME_PATH}/aws/l40s/
 
 VOCAB_FILE=../vocabs/gpt2-vocab.json
 MERGE_FILE=../vocabs/gpt2-merges.txt

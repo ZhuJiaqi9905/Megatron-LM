@@ -29,7 +29,7 @@ model_prof_configs = {
             8192,
             16 * 1024,
             32 * 1024,
-            # 64 * 1024,
+            64 * 1024,
             ], 
         "seq_len_kv": [ # used when enable --prof-core-attention
             # 512,
