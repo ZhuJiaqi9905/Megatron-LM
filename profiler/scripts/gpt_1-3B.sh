@@ -8,7 +8,7 @@ NNODES=1
 NODE_RANK=0
 
 RUNTIME_PATH=$(pwd)/
-PROFILING_PATH=${RUNTIME_PATH}/aws/l4/
+PROFILING_PATH=${RUNTIME_PATH}/aws/a10g/
 
 VOCAB_FILE=../vocabs/gpt2-vocab.json
 MERGE_FILE=../vocabs/gpt2-merges.txt

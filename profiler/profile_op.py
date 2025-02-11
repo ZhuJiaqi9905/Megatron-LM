@@ -548,6 +548,6 @@ if __name__ == "__main__":
     for prof_task in all_prof_tasks:
         run_profile(prof_task)
     end_profiling_time = time.time()
-    
-    data.to_csv(f"{'.' if args.prof_path is None else args.prof_path}/{datetime.now().strftime('%Y%m%d_%H%M%S')}_tp_{mpu.get_tensor_model_parallel_world_size()}.csv", index=False)
+    if torch.distributed.get_rank() == 0: 
+        data.to_csv(f"{'.' if args.prof_path is None else args.prof_path}/{datetime.now().strftime('%Y%m%d_%H%M%S')}_tp_{mpu.get_tensor_model_parallel_world_size()}.csv", index=False)
     print_rank0(f"[TOTAL PROFILING TIME] {end_profiling_time - start_profiling_time:2f} s")

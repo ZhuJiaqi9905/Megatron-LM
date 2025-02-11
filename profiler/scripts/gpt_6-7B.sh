@@ -1,5 +1,5 @@
 #!/bin/bash
-export CUDA_VISIBLE_DEVICES="4,5,6,7"
+# export CUDA_VISIBLE_DEVICES="4,5,6,7"
 export PYTHONPATH="/workspace/python/Megatron-LM-0.6.0/:${PYTHONPATH}:/workspace/python/Megatron-LM/:/workspace/Megatron-LM/"
 export CUDA_DEVICE_MAX_CONNECTIONS=1
 MASTER_ADDR=localhost
@@ -8,7 +8,7 @@ NNODES=1
 NODE_RANK=0
 
 RUNTIME_PATH=$(pwd)/
-PROFILING_PATH=${RUNTIME_PATH}/aws/l4/
+PROFILING_PATH=${RUNTIME_PATH}/aws/a10g/
 
 VOCAB_FILE=../vocabs/gpt2-vocab.json
 MERGE_FILE=../vocabs/gpt2-merges.txt
@@ -50,11 +50,11 @@ GPT_ARGS="
     --sequence-parallel \
 "
 mkdir -p ${PROFILING_PATH}
-MAX_NUM_GPUS=4
+MAX_NUM_GPUS=8
 MODEL_NAME=gpt
 MODEL_SIZE=6-7B
 
-for ((tp_size=2; tp_size<=$MAX_NUM_GPUS; tp_size=tp_size*2))
+for ((tp_size=1; tp_size<=$MAX_NUM_GPUS; tp_size=tp_size*2))
 do
     GPUS_PER_NODE=${tp_size}
     DISTRIBUTED_ARGS="--nproc_per_node $GPUS_PER_NODE --nnodes $NNODES --node_rank $NODE_RANK --master_addr $MASTER_ADDR --master_port $MASTER_PORT"
