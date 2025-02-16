@@ -10,6 +10,11 @@ NODE_RANK=0
 RUNTIME_PATH=$(pwd)/
 PROFILING_PATH=${RUNTIME_PATH}/aws/a10g/
 
+mkdir -p ${PROFILING_PATH}
+MAX_NUM_GPUS=8
+MODEL_NAME=gpt
+MODEL_SIZE=6-7B
+
 VOCAB_FILE=../vocabs/gpt2-vocab.json
 MERGE_FILE=../vocabs/gpt2-merges.txt
 #  num_layers, seq_len, hidden_size, ffn_hidden_size, num_attention_heads, kv_channels, vocab_size, params_dtype,micro-batch-size, global-batch-size are fake.
@@ -49,30 +54,31 @@ GPT_ARGS="
     --transformer-impl local \
     --sequence-parallel \
 "
-mkdir -p ${PROFILING_PATH}
-MAX_NUM_GPUS=8
-MODEL_NAME=gpt
-MODEL_SIZE=6-7B
 
-for ((tp_size=1; tp_size<=$MAX_NUM_GPUS; tp_size=tp_size*2))
+
+for ((tp_size = 1; tp_size <= MAX_NUM_GPUS; tp_size=tp_size*2))
 do
-    GPUS_PER_NODE=${tp_size}
-    DISTRIBUTED_ARGS="--nproc_per_node $GPUS_PER_NODE --nnodes $NNODES --node_rank $NODE_RANK --master_addr $MASTER_ADDR --master_port $MASTER_PORT"
+    for ((cp_size = 1; cp_size * tp_size <= MAX_NUM_GPUS; cp_size=cp_size*2))
+    do
+        GPUS_PER_NODE=$((tp_size * cp_size))
+        DISTRIBUTED_ARGS="--nproc_per_node $GPUS_PER_NODE --nnodes $NNODES --node_rank $NODE_RANK --master_addr $MASTER_ADDR --master_port $MASTER_PORT"
 
-    echo [TIME] before profiling tp_size $tp_size : $(date '+%Y-%m-%d-%H-%M-%S') >> ${PROFILING_PATH}profiling_${MODEL_NAME}.log
+        echo [TIME] before profiling tp_size $tp_size cp_size $cp_size : $(date '+%Y-%m-%d-%H-%M-%S') >> ${PROFILING_PATH}profiling_${MODEL_NAME}.log
 
-    torchrun $DISTRIBUTED_ARGS \
-        profile_op.py \
-        ${DATA_ARGS} \
-        ${GPT_ARGS} \
-        --tensor-model-parallel-size ${tp_size} \
-        --use-mcore-models \
-        --prof-path $PROFILING_PATH \
-        --prof-model-name $MODEL_NAME \
-        --prof-model-size $MODEL_SIZE \
-        --prof-warmup-times 1 \
-        --prof-repeat-times 5 \
-        2>&1 | tee ${PROFILING_PATH}profiling_${MODEL_NAME}_${MODEL_SIZE}_op_tp${tp_size}.log
+        torchrun $DISTRIBUTED_ARGS \
+            profile_op.py \
+            ${DATA_ARGS} \
+            ${GPT_ARGS} \
+            --tensor-model-parallel-size ${tp_size} \
+            --context-parallel-size ${cp_size} \
+            --use-mcore-models \
+            --prof-path $PROFILING_PATH \
+            --prof-model-name $MODEL_NAME \
+            --prof-model-size $MODEL_SIZE \
+            --prof-warmup-times 1 \
+            --prof-repeat-times 5 \
+            2>&1 | tee ${PROFILING_PATH}profiling_${MODEL_NAME}_${MODEL_SIZE}_tp${tp_size}_cp${cp_size}.log
 
-    echo [TIME] after profiling tp_size $tp_size : $(date '+%Y-%m-%d-%H-%M-%S') >> ${PROFILING_PATH}profiling_${MODEL_NAME}.log
+        echo [TIME] after profiling tp_size $tp_size : $(date '+%Y-%m-%d-%H-%M-%S') >> ${PROFILING_PATH}profiling_${MODEL_NAME}.log
+    done
 done

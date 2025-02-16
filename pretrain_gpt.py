@@ -149,8 +149,9 @@ def forward_step(data_iterator, model: GPTModel):
     timers('batch-generator', log_level=2).start()
     tokens, labels, loss_mask, attention_mask, position_ids = get_batch(
         data_iterator)
+    print(f"tokens: {tokens.shape}, labels: {labels.shape}, loss_mask: {loss_mask.shape}, attention_mask: {attention_mask.shape}, position_ids: {position_ids.shape}")
     timers('batch-generator').stop()
-
+    exit()
     output_tensor = model(tokens, position_ids, attention_mask,
                           labels=labels)
 
