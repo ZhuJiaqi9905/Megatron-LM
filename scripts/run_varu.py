@@ -5,10 +5,8 @@ import signal
 import sys, os, time
 import re
 
-hosts = [91, 92, 90, 42, 46, 47]
-for idx, host_suffix in enumerate(hosts):
-    hosts[idx] = '172.21.0.' + str(host_suffix)
-ports = [2230 + i for i in range(4)]
+hosts = ['10.20.23.90', '10.20.23.91', '10.20.23.92', '10.20.23.42']
+ngpus_per_node = 4
 meg_project_dir = '/workspace/Megatron-LM-varuna'
 varu_project_dir = '/workspace/varuna'
 user = 'root'
@@ -27,8 +25,7 @@ mbs = {'gpt3_350M': {24: 8, 22: 16, 20: 8, 18: 8, 16: 8, 14: 8, 12: 4, 10: 8, 8:
 
 clients = []
 for host in hosts:
-    for port in ports:
-        clients.append(SSHClient(host=host, port=port, user=user, pkey=pkey))
+    clients.extend([SSHClient(host=host, user=user, pkey=pkey)] * ngpus_per_node)
 
 local = clients[0]
 
@@ -47,10 +44,10 @@ def generate_available_machines(number, is_pretrain=True):
         with open('available_machines.out', 'w') as fp:
             machines = 0
             for host in hosts:
-                for port in ports:
+                for i in range(ngpus_per_node):
                     if machines < number:
                         machines += 1
-                        fp.write(str(host) + ':' + str(port) + '\n')
+                        fp.write(str(host) + ':' + str(i) + '\n')
                     else:
                         break
                 if machines >= number:
