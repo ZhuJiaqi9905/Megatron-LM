@@ -25,7 +25,7 @@ mbs = {'gpt3_350M': {24: 8, 22: 16, 20: 8, 18: 8, 16: 8, 14: 8, 12: 4, 10: 8, 8:
 
 clients = []
 for host in hosts:
-    clients.extend([SSHClient(host=host, user=user, pkey=pkey)] * ngpus_per_node)
+    clients.append(SSHClient(host=host, user=user, pkey=pkey))
 
 local = clients[0]
 
@@ -39,18 +39,25 @@ def local_run_cmd(cmd, printCmd=True):
     for line in output.stderr:
         print(line)
 
+def client_run_cmd(client, cmd, printCmd=True):
+    output = client.run_command(cmd)
+    if printCmd:
+        print(cmd)
+    client.wait_finished(output)
+    for line in output.stdout:
+        print(line)
+    for line in output.stderr:
+        print(line)
+
 def generate_available_machines(number, is_pretrain=True):
     if is_pretrain:
         with open('available_machines.out', 'w') as fp:
             machines = 0
             for host in hosts:
-                for i in range(ngpus_per_node):
-                    if machines < number:
-                        machines += 1
-                        fp.write(str(host) + ':' + str(i) + '\n')
-                    else:
-                        break
-                if machines >= number:
+                if machines < number:
+                    machines += 1
+                    fp.write(str(host) + '\n')
+                else:
                     break
 
 def kill_all():
@@ -64,6 +71,11 @@ def cp_log(number, model, nstage, mbs):
 def rm_tmp():
     cmd = f'rm -rf /mnt/gpu-91/varuna/profile*'
     local_run_cmd(cmd)
+
+def install_varuna():
+    for client in clients:
+        cmd = f'cd {varu_project_dir} && bash ./scripts/install.sh'
+        client_run_cmd(client, cmd)
 
 iteration_time_parser = re.compile(r'iteration(\s+)(?P<iterationnum>\d+)/(.+)\| elapsed time per iteration \(ms\): (?P<iterationtime>.+) \| learning rate')
 error_parser = re.compile(r'\[Errno (\d+)\] Connection refused')
@@ -102,7 +114,7 @@ def run_test(number, model_i, load=False):
     # print('finish profile')
     # kill_all()
     generate_available_machines(number, True)
-    output = local.run_command(f'cd {meg_project_dir} && bash ./scripts/pretrain_gpt2_varuna.sh {models[model_i]} {nstages[models[model_i]][number]} {mbs[models[model_i]][number]} {number}')
+    output = local.run_command(f'cd {meg_project_dir} && bash ./scripts/pretrain_gpt2_varuna.sh {models[model_i]} {nstages[models[model_i]][number]} {mbs[models[model_i]][number]} {number} {ngpus_per_node}')
     print('time to sleep')
     success = False
     fail = False
