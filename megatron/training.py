@@ -86,6 +86,8 @@ def pretrain(train_valid_test_dataset_provider, model_provider,
 
     args = get_args()
     timers = get_timers()
+    
+    torch.cuda.set_device(torch.device('cuda:{}'.format(args.gpuid)))
 
     train_ds, valid_ds, test_ds = build_train_valid_test_datasets(train_valid_test_dataset_provider)
     def get_batch_fn(size, device=None):

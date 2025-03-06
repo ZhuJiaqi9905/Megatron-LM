@@ -54,10 +54,13 @@ def generate_available_machines(number, is_pretrain=True):
         with open('available_machines.out', 'w') as fp:
             machines = 0
             for host in hosts:
-                if machines < number:
-                    machines += 1
-                    fp.write(str(host) + '\n')
-                else:
+                for i in range(ngpus_per_node):
+                    if machines < number:
+                        machines += 1
+                        fp.write(f'{host}:{i}\n')
+                    else:
+                        break
+                if machines >= number:
                     break
 
 def kill_all():
@@ -114,7 +117,7 @@ def run_test(number, model_i, load=False):
     # print('finish profile')
     # kill_all()
     generate_available_machines(number, True)
-    output = local.run_command(f'cd {meg_project_dir} && bash ./scripts/pretrain_gpt2_varuna.sh {models[model_i]} {nstages[models[model_i]][number]} {mbs[models[model_i]][number]} {number} {ngpus_per_node}')
+    output = local.run_command(f'cd {meg_project_dir} && bash ./scripts/pretrain_gpt2_varuna.sh {models[model_i]} {nstages[models[model_i]][number]} {mbs[models[model_i]][number]} {number}')
     print('time to sleep')
     success = False
     fail = False

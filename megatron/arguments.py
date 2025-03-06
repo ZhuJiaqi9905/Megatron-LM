@@ -376,6 +376,8 @@ def _add_mixed_precision_args(parser):
 def _add_distributed_args(parser):
     group = parser.add_argument_group(title='mixed precision')
 
+    group.add_argument('--gpuid', type=int, default=0,
+                       help='Local GPU id to use.')
     group.add_argument('--model-parallel-size', type=int, default=1,
                        help='Size of the model parallel.')
     group.add_argument('--distributed-backend', default='nccl',
