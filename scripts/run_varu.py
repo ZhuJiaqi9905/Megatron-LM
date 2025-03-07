@@ -5,12 +5,14 @@ import signal
 import sys, os, time
 import re
 
-hosts = ['10.20.23.90', '10.20.23.91', '10.20.23.92', '10.20.23.42']
-ngpus_per_node = 4
+# hosts = ['172.31.44.99', '10.20.23.91', '10.20.23.92', '10.20.23.42']
+hosts = ['172.31.44.99']
+master_addr = hosts[0]
+ngpus_per_node = 8
 meg_project_dir = '/workspace/Megatron-LM-varuna'
 varu_project_dir = '/workspace/varuna'
-user = 'root'
-pkey = '/root/.ssh/id_rsa'
+user = 'ubuntu'
+pkey = '/home/ubuntu/.ssh/id_rsa'
 timeout = 1200
 
 models = ['gpt3_350M', 'gpt3_1_3B', 'gpt3_2_7B', 'gpt3_6_7B']
@@ -72,12 +74,12 @@ def cp_log(number, model, nstage, mbs):
     local_run_cmd(cmd)
 
 def rm_tmp():
-    cmd = f'rm -rf /mnt/gpu-91/varuna/profile*'
+    cmd = f'rm -rf /mnt/varuna/profile*'
     local_run_cmd(cmd)
 
 def install_varuna():
     for client in clients:
-        cmd = f'cd {varu_project_dir} && bash ./scripts/install.sh'
+        cmd = f'cd {varu_project_dir} && pip install -e .'
         client_run_cmd(client, cmd)
 
 iteration_time_parser = re.compile(r'iteration(\s+)(?P<iterationnum>\d+)/(.+)\| elapsed time per iteration \(ms\): (?P<iterationtime>.+) \| learning rate')
@@ -117,14 +119,14 @@ def run_test(number, model_i, load=False):
     # print('finish profile')
     # kill_all()
     generate_available_machines(number, True)
-    output = local.run_command(f'cd {meg_project_dir} && bash ./scripts/pretrain_gpt2_varuna.sh {models[model_i]} {nstages[models[model_i]][number]} {mbs[models[model_i]][number]} {number}')
+    output = local.run_command(f'cd {meg_project_dir} && bash ./scripts/pretrain_gpt2_varuna.sh {models[model_i]} {nstages[models[model_i]][number]} {mbs[models[model_i]][number]} {number} {master_addr}')
     print('time to sleep')
     success = False
     fail = False
     start = time.time()
     while time.time() - start < timeout:
         time.sleep(20)
-        success, fail = check_finish(success, fail, f'ssh_logs_{number}_{models[model_i]}_{nstages[models[model_i]][number]}_{mbs[models[model_i]][number]}')
+        success, fail = check_finish(success, fail, f'ssh_log_{number}_{models[model_i]}_{nstages[models[model_i]][number]}_{mbs[models[model_i]][number]}')
         if success or fail:
             break
     print('time to kill')
@@ -135,6 +137,11 @@ def run_test(number, model_i, load=False):
         pass
     if fail:
         print(f'failed with {number} {models[model_i]}, {nstages[models[model_i]][number]}, {mbs[models[model_i]][number]}')
+        local.wait_finished(output)
+        for line in output.stdout:
+            print(line)
+        for line in output.stderr:
+            print(line)
     if load:
         output = local.run_command(f'cd {meg_project_dir} && bash ./scripts/pretrain_gpt2_varuna_load.sh {models[model_i]} {nstages[models[model_i]][number]} {mbs[models[model_i]][number]} {number}')
         local.wait_finished(output)

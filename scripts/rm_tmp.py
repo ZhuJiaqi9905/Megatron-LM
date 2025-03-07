@@ -23,7 +23,7 @@ for idx in range(len(hosts)):
 
 for idx in range(len(hosts)):
     print("==============================")
-    print(hosts[idx], ports[idx], f'rm -rf /mnt/gpu-91/varuna/profile_rank_{idx}')
+    print(hosts[idx], ports[idx], f'rm -rf /mnt/varuna/profile_rank_{idx}')
     print("==============================")
-    output = clients[idx].run_command(f'rm -rf /mnt/gpu-91/varuna/profile_rank_{idx}')
+    output = clients[idx].run_command(f'rm -rf /mnt/varuna/profile_rank_{idx}')
     clients[idx].wait_finished(output)

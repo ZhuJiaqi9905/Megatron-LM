@@ -111,7 +111,7 @@ Some minor modifications are required for GPT-2 data preprocessing, namely, the 
 <pre>
 python tools/preprocess_data.py \
        --input my-corpus.json \
-       --output-prefix my-gpt2 \
+       --output-prefix meg-gpt2 \
        --vocab gpt2-vocab.json \
        --dataset-impl mmap \
        --tokenizer-type GPT2BPETokenizer \
@@ -119,7 +119,7 @@ python tools/preprocess_data.py \
        --append-eod
 </pre>
 
-Here the output files are named `my-gpt2_text_document.bin` and `my-gpt2_text_document.idx`. As before, in GPT-2 training, use the longer name without the extension as `--data-path`.
+Here the output files are named `meg-gpt2_text_document.bin` and `meg-gpt2_text_document.idx`. As before, in GPT-2 training, use the longer name without the extension as `--data-path`.
 
 Further command line arguments are described in the source file [`preprocess_data.py`](./tools/preprocess_data.py).
 
@@ -179,7 +179,7 @@ It follows largely the same format as the previous BERT script with a few notabl
 CHECKPOINT_PATH=checkpoints/gpt2_345m
 VOCAB_FILE=gpt2-vocab.json
 MERGE_FILE=gpt2-merges.txt
-DATA_PATH=my-gpt2_text_document
+DATA_PATH=meg-gpt2_text_document
 
 GPT2_ARGS="--num-layers 24 \
            --hidden-size 1024 \
@@ -259,7 +259,7 @@ DISTRIBUTED_ARGS=&#60;same as those directly above&#62;
 CHECKPOINT_PATH=checkpoints/gpt2_345m
 VOCAB_FILE=gpt2-vocab.json
 MERGE_FILE=gpt2-merges.txt
-DATA_PATH=my-gpt2_text_document
+DATA_PATH=meg-gpt2_text_document
 GPT2_ARGS=&#60;same as those in <a href="#gpt-2-pretraining">GPT-2 pretraining</a> above&#62;
 OUTPUT_ARGS=&#60;same as those in <a href="#bert-pretraining">BERT pretraining</a> above&#62;
 

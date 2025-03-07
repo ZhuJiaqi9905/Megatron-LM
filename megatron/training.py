@@ -77,6 +77,7 @@ def pretrain(train_valid_test_dataset_provider, model_provider,
             to set already parse arguments.
     """
     print('enter pretrain')
+    os.environ["LD_LIBRARY_PATH"] = "/usr/local/cuda-11.7/efa/lib/:" + os.environ.get("LD_LIBRARY_PATH", "")
 
     # Initalize and get arguments, timers, and Tensorboard writer.
     initialize_megatron(extra_args_provider=extra_args_provider,
@@ -163,7 +164,7 @@ def get_model(model_provider_func, get_batch_fn=None):
             global_batch_size = args.batch_size * data_parallel_size
             model = Varuna( model, args.stage_to_rank_map, get_batch_fn, global_batch_size, 
                             args.chunk_size, args.fp16, local_rank=args.local_rank, 
-                            device=args.local_rank, shared_weights=shared_weights)
+                            device=args.gpuid, shared_weights=shared_weights)
 
     # Print number of parameters.
     if mpu.get_data_parallel_rank() == 0:

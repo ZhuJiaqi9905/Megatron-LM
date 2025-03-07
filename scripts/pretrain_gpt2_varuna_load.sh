@@ -4,6 +4,7 @@ model=${1:-"gpt3_350M"}
 nstages=${2:-1}
 mbs=${3:-8}
 total_gpus=${4:-16}
+MASTER_ADDR=${5}
 
 gbs=2048
 gpus_per_node=1
@@ -31,10 +32,10 @@ else
        exit -1
 fi
 
-DATA_PATH=/mnt/gpu-91/dataset/gpt-dataset-simplewiki/my-gpt2_text_document
-VOCAB_FILE=/mnt/gpu-91/dataset/gpt2-vocab.json
-MERGE_FILE=/mnt/gpu-91/dataset/gpt2-merges.txt
-CHECKPOINT_PATH=/mnt/gpu-91/varuna/checkpoints/${model}/${total_gpus}
+DATA_PATH=/mnt/varuna/dataset/gpt-dataset-simplewiki/meg-gpt2_text_document
+VOCAB_FILE=/mnt/varuna/dataset/gpt2-vocab.json
+MERGE_FILE=/mnt/varuna/dataset/gpt2-merges.txt
+CHECKPOINT_PATH=/mnt/varuna/checkpoints/${model}/${total_gpus}
 
 # rm _tmp_*
 # rm -rf ${CHECKPOINT_PATH}/*
@@ -43,7 +44,7 @@ CHECKPOINT_PATH=/mnt/gpu-91/varuna/checkpoints/${model}/${total_gpus}
 
 export GLOO_SOCKET_IFNAME=enp216s0np0 && \
 python3 -m varuna.run_varuna \
-       --manager_ip 172.21.0.91 \
+       --manager_ip $MASTER_ADDR \
        --nstages ${nstages} --chunk_size ${mbs} \
        --batch_size ${gbs} \
        --total_gpus ${total_gpus} \
