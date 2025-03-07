@@ -21,7 +21,7 @@ for idx in range(len(hosts)):
     print(hosts[idx], ports[idx])
     clients.append(SSHClient(host=hosts[idx], port=ports[idx], user=user, pkey=pkey))
 
-for idx in range(len(hosts)):
+for idx in range(len(hosts), 8):
     print("==============================")
     print(hosts[idx], ports[idx], f'rm -rf /mnt/varuna/profile_rank_{idx}')
     print("==============================")
