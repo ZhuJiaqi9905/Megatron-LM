@@ -161,7 +161,7 @@ def get_model(model_provider_func, get_batch_fn=None):
             print("not profiling")
             pipeline_parallel_size, data_parallel_size = get_varuna_config(args.stage_to_rank_map)
             args.partitions = pipeline_parallel_size
-            global_batch_size = args.batch_size * data_parallel_size
+            global_batch_size = args.batch_size
             model = Varuna( model, args.stage_to_rank_map, get_batch_fn, global_batch_size, 
                             args.chunk_size, args.fp16, local_rank=args.local_rank, 
                             device=args.gpuid, shared_weights=shared_weights)

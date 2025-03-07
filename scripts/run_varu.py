@@ -13,17 +13,19 @@ meg_project_dir = '/workspace/Megatron-LM-varuna'
 varu_project_dir = '/workspace/varuna'
 user = 'ubuntu'
 pkey = '/home/ubuntu/.ssh/id_rsa'
-timeout = 1200
+timeout = 4800
 
-models = ['gpt3_350M', 'gpt3_1_3B', 'gpt3_2_7B', 'gpt3_6_7B']
-nstages = {'gpt3_350M': {24: 4, 22: 11, 20: 4, 18: 6, 16: 4, 14: 7, 12: 4, 10: 5, 8: 2},
-           'gpt3_1_3B': {24: 4, 22: 11, 20: 4, 18: 6, 16: 4, 14: 7, 12: 4, 10: 5, 8: 4},
-           'gpt3_2_7B': {24: 6, 22: 11, 20: 5, 18: 6, 16: 8, 14: 7, 12: 6, 10: 5, 8: 8},
-           'gpt3_6_7B': {24: 12, 22: 11, 20: 5, 18: 6, 16: 4, 14: 7, 12: 6, 10: 5, 8: 8}}
-mbs = {'gpt3_350M': {24: 8, 22: 16, 20: 8, 18: 8, 16: 8, 14: 8, 12: 4, 10: 8, 8: 4},
-       'gpt3_1_3B': {24: 2, 22: 8, 20: 2, 18: 2, 16: 2, 14: 2, 12: 2, 10: 2, 8: 2},
-       'gpt3_2_7B': {24: 1, 22: 2, 20: 1, 18: 2, 16: 4, 14: 2, 12: 2, 10: 1, 8: 1},
-       'gpt3_6_7B': {24: 1, 22: 2, 20: 2, 18: 1, 16: 1, 14: 1, 12: 1, 10: 1, 8: 1}}
+models = ['gpt3_350M', 'gpt3_1_3B', 'gpt3_2_7B', 'gpt3_6_7B', 'gpt3_13B']
+nstages = {'gpt3_350M': {32: 1, 30: 1, 28: 1, 26: 1, 24: 1, 22: 1, 20: 1, 18: 1, 16: 1, 14: 1, 12: 1, 10: 1, 8: 1},
+           'gpt3_1_3B': {32: 2, 30: 15, 28: 7, 26: 13, 24: 3, 22: 11, 20: 5, 18: 9, 16: 2, 14: 7, 12: 2, 10: 5, 8: 2},
+           'gpt3_2_7B': {32: 1, 30: 1, 28: 1, 26: 1, 24: 6, 22: 11, 20: 5, 18: 6, 16: 8, 14: 7, 12: 6, 10: 5, 8: 4},
+           'gpt3_6_7B': {32: 1, 30: 1, 28: 1, 26: 1, 24: 12, 22: 11, 20: 5, 18: 6, 16: 4, 14: 7, 12: 6, 10: 5, 8: 8},
+           'gpt3_13B': {32: 1, 30: 1, 28: 1, 26: 1, 24: 12, 22: 11, 20: 5, 18: 6, 16: 4, 14: 7, 12: 6, 10: 5, 8: 8}}
+mbs = {'gpt3_350M': {32: 8, 30: 8, 28: 8, 26: 8, 24: 8, 22: 8, 20: 8, 18: 8, 16: 8, 14: 8, 12: 8, 10: 8, 8: 8},
+       'gpt3_1_3B': {32: 1, 30: 1, 28: 1, 26: 1, 24: 2, 22: 8, 20: 2, 18: 2, 16: 2, 14: 2, 12: 2, 10: 2, 8: 4},
+       'gpt3_2_7B': {32: 1, 30: 1, 28: 1, 26: 1, 24: 1, 22: 2, 20: 1, 18: 2, 16: 4, 14: 2, 12: 2, 10: 1, 8: 4},
+       'gpt3_6_7B': {32: 1, 30: 1, 28: 1, 26: 1, 24: 1, 22: 2, 20: 2, 18: 1, 16: 1, 14: 1, 12: 1, 10: 1, 8: 4},
+        'gpt3_13B': {32: 1, 30: 1, 28: 1, 26: 1, 24: 1, 22: 2, 20: 2, 18: 1, 16: 1, 14: 1, 12: 1, 10: 1, 8: 1}}
 
 clients = []
 for host in hosts:
@@ -70,7 +72,7 @@ def kill_all():
     local_run_cmd(cmd)
 
 def cp_log(number, model, nstage, mbs):
-    cmd = f'cd {meg_project_dir} && rm -rf ssh_logs_{number}_{model}_{nstage}_{mbs} && cp -r ssh_logs ssh_logs_{number}_{model}_{nstage}_{mbs}'
+    cmd = f'cd {meg_project_dir} && rm -rf res/ssh_logs_{number}_{model}_{nstage}_{mbs} && cp -r res/ssh_logs res/ssh_logs_{number}_{model}_{nstage}_{mbs}'
     local_run_cmd(cmd)
 
 def rm_tmp():
@@ -86,7 +88,10 @@ iteration_time_parser = re.compile(r'iteration(\s+)(?P<iterationnum>\d+)/(.+)\| 
 error_parser = re.compile(r'\[Errno (\d+)\] Connection refused')
 traceback_parser = re.compile(r'Traceback \(most recent call last\):')
 
-def check_finish(success, fail, directory='ssh_logs'):
+def check_finish(success, fail, directory='res/ssh_logs'):
+    if not os.path.exists(directory):
+        fail = True
+        return success, fail
     with open(f'{directory}/ssh_out_0.log', 'r') as f:
         for line in f:
             if 'Process done with return code 0' in line:
@@ -126,7 +131,7 @@ def run_test(number, model_i, load=False):
     start = time.time()
     while time.time() - start < timeout:
         time.sleep(20)
-        success, fail = check_finish(success, fail, f'ssh_log_{number}_{models[model_i]}_{nstages[models[model_i]][number]}_{mbs[models[model_i]][number]}')
+        success, fail = check_finish(success, fail, f'res/ssh_log_{number}_{models[model_i]}_{nstages[models[model_i]][number]}_{mbs[models[model_i]][number]}')
         if success or fail:
             break
     print('time to kill')
@@ -150,7 +155,7 @@ def run_test(number, model_i, load=False):
         for line in output.stderr:
             print(line)
 
-run_test(8, 0)
+run_test(8, 4)
 # run_test(20, 2)
 
 # for model_i in range(0, 2):

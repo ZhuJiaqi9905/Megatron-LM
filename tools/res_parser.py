@@ -55,6 +55,6 @@ def res_parser(file):
         
 for model in models[:3]:
     for node_num in range(8, 26, 2):
-        res_parser(f'ssh_logs_{node_num}_{model}_{nstages[model][node_num]}_{mbs[model][node_num]}/ssh_out_0.log')
+        res_parser(f'res/ssh_logs_{node_num}_{model}_{nstages[model][node_num]}_{mbs[model][node_num]}/ssh_out_0.log')
 
 pprint.pprint(time_res)

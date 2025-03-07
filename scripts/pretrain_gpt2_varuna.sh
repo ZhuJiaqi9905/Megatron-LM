@@ -26,6 +26,10 @@ elif [[ "${model}" == "gpt3_6_7B" ]]; then
        NUM_LAYERS=32
        HIDDEN_SIZE=4096
        NUM_ATTENTION_HEADS=32
+elif [[ "${model}" == "gpt3_13B" ]]; then
+       NUM_LAYERS=40
+       HIDDEN_SIZE=5120
+       NUM_ATTENTION_HEADS=40
 else
        echo "Don't have model ${model}"
        exit -1
@@ -49,7 +53,7 @@ python3 -m varuna.run_varuna \
        --batch_size ${gbs} \
        --total_gpus ${total_gpus} \
        --gpus_per_node ${gpus_per_node} \
-       --log_dir ssh_log_${total_gpus}_${model}_${nstages}_${mbs} \
+       --log_dir res/ssh_log_${total_gpus}_${model}_${nstages}_${mbs} \
        --no_morphing pretrain_gpt2.py \
        --num-layers $NUM_LAYERS \
        --hidden-size $HIDDEN_SIZE \
