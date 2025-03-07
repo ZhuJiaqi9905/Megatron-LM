@@ -165,8 +165,6 @@ def run_test(number, model_i, load=False):
         for line in output.stderr:
             print(line)
 
-run_test(14, 3)
-run_test(16, 3)
 run_test(16, 4)
 # run_test(14, 2)
 # run_test(20, 2)
