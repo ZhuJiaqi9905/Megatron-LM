@@ -6,7 +6,7 @@ import sys, os, time
 import re
 
 # hosts = ['172.31.44.99', '10.20.23.91', '10.20.23.92', '10.20.23.42']
-hosts = ['172.31.44.99', '172.31.38.220']
+hosts = ['172.31.44.99', '172.31.38.220', '172.31.47.180']
 master_addr = hosts[0]
 ngpus_per_node = 8
 meg_project_dir = '/workspace/Megatron-LM-varuna'
@@ -23,7 +23,7 @@ nstages = {'gpt3_350M': {32: 1, 30: 1, 28: 1, 26: 1, 24: 1, 22: 1, 20: 1, 18: 1,
            'gpt3_13B': {32: 1, 30: 1, 28: 1, 26: 1, 24: 12, 22: 11, 20: 5, 18: 6, 16: 16, 14: 14, 12: 12, 10: 10, 8: 8}}
 mbs = {'gpt3_350M': {32: 8, 30: 8, 28: 8, 26: 8, 24: 8, 22: 8, 20: 8, 18: 8, 16: 8, 14: 8, 12: 8, 10: 8, 8: 8},
        'gpt3_1_3B': {32: 4, 30: 4, 28: 4, 26: 4, 24: 4, 22: 4, 20: 4, 18: 4, 16: 4, 14: 4, 12: 4, 10: 4, 8: 4},
-       'gpt3_2_7B': {32: 4, 30: 4, 28: 4, 26: 8, 24: 4, 22: 8, 20: 4, 18: 4, 16: 4, 14: 8, 12: 4, 10: 4, 8: 4},
+       'gpt3_2_7B': {32: 4, 30: 4, 28: 4, 26: 8, 24: 4, 22: 8, 20: 4, 18: 4, 16: 4, 14: 8, 12: 4, 10: 8, 8: 4},
        'gpt3_6_7B': {32: 2, 30: 2, 28: 2, 26: 4, 24: 2, 22: 4, 20: 4, 18: 2, 16: 2, 14: 2, 12: 2, 10: 4, 8: 4},
         'gpt3_13B': {32: 1, 30: 1, 28: 1, 26: 1, 24: 1, 22: 2, 20: 2, 18: 1, 16: 4, 14: 1, 12: 1, 10: 1, 8: 1}}
 # nstages = {'gpt3_350M': {32: 1, 30: 1, 28: 1, 26: 1, 24: 1, 22: 1, 20: 1, 18: 1, 16: 1, 14: 1, 12: 1, 10: 1, 8: 1},
@@ -108,12 +108,12 @@ def check_finish(success, fail, directory='res/ssh_logs'):
                 success = True
                 break
     with open(f'{directory}/ssh_err_0.log', 'r') as f:
-        for line in f:
-            if 'Error' in line:
-                fail = True
+        if len(f) > 0:
+            fail = True
     return success, fail
 
 def run_test(number, model_i, load=False):
+    assert number <= len(hosts) * ngpus_per_node, f'number: {number} > len(hosts): {len(hosts)} * ngpus_per_node: {ngpus_per_node}'
     print(f'run {models[model_i]} test {number} nodes')
     kill_all()
     rm_tmp()
@@ -144,7 +144,7 @@ def run_test(number, model_i, load=False):
         success, fail = check_finish(success, fail, f'res/ssh_log_{number}_{models[model_i]}_{nstages[models[model_i]][number]}_{mbs[models[model_i]][number]}')
         if success or fail:
             break
-    print('time to kill')
+    print(f'time to kill {fail}')
     kill_all()
     print('finish pretrain')
     if success:
@@ -165,15 +165,15 @@ def run_test(number, model_i, load=False):
         for line in output.stderr:
             print(line)
 
-run_test(14, 4)
-run_test(12, 4)
-run_test(10, 4)
+# run_test(10, 2)
 # run_test(14, 2)
-# run_test(20, 2)
+# run_test(18, 2)
+# run_test(20, 3)
 
-# for model_i in range(0, 2):
-#     for i in (8, 12):
-#         run_test(i, model_i)
+for i in range(8, 26, 4):
+    run_test(i, 3)
 
+for i in range(12, 26, 4):
+    run_test(i, 4)
 # for model_i in range(0, len(models)):
 #     run_test(16, model_i)
