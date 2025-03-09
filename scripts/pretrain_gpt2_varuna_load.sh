@@ -28,7 +28,7 @@ elif [[ "${model}" == "gpt3_6_7B" ]]; then
        NUM_ATTENTION_HEADS=32
 elif [[ "${model}" == "gpt3_13B" ]]; then
        NUM_LAYERS=40
-       HIDDEN_SIZE=5140
+       HIDDEN_SIZE=5120
        NUM_ATTENTION_HEADS=40
 else
        echo "Don't have model ${model}"
