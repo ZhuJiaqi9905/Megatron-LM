@@ -60,7 +60,7 @@ python3 -m varuna.run_varuna \
        --num-attention-heads $NUM_ATTENTION_HEADS \
        --seq-length 1024 \
        --max-position-embeddings 1024 \
-       --train-iters 3 \
+       --train-iters 1 \
        --lr-decay-iters 18750 \
        --save ${CHECKPOINT_PATH} \
        --data-path ${DATA_PATH} \
