@@ -161,27 +161,27 @@ def load_checkpoint(model, optimizer, lr_scheduler, load_arg='load'):
         tracker_filename = get_checkpoint_tracker_filename(load_dir)
 
         # If no tracker file, return iretation zero.
-        if not os.path.isfile(tracker_filename):
-            print_rank_0('WARNING: could not find the metadata file {} '.format(
-                tracker_filename))
-            print_rank_0('    will not load any checkpoints and will start from '
-                        'random')
-            return 0
+        # if not os.path.isfile(tracker_filename):
+        #     print_rank_0('WARNING: could not find the metadata file {} '.format(
+        #         tracker_filename))
+        #     print_rank_0('    will not load any checkpoints and will start from '
+        #                 'random')
+        #     return 0
 
         # Otherwise, read the tracker file and either set the iteration or
         # mark it as a release checkpoint.
-        iteration = 0
+        iteration = 3
         release = False
-        with open(tracker_filename, 'r') as f:
-            metastring = f.read().strip()
-            try:
-                iteration = int(metastring)
-            except ValueError:
-                release = metastring == 'release'
-                if not release:
-                    print_rank_0('ERROR: Invalid metadata file {}. Exiting'.format(
-                        tracker_filename))
-                    sys.exit()
+        # with open(tracker_filename, 'r') as f:
+        #     metastring = f.read().strip()
+        #     try:
+        #         iteration = int(metastring)
+        #     except ValueError:
+        #         release = metastring == 'release'
+        #         if not release:
+        #             print_rank_0('ERROR: Invalid metadata file {}. Exiting'.format(
+        #                 tracker_filename))
+        #             sys.exit()
 
         assert iteration > 0 or release, 'error parsing metadata file {}'.format(
             tracker_filename)
@@ -268,7 +268,7 @@ def load_checkpoint(model, optimizer, lr_scheduler, load_arg='load'):
                          'exiting ...'.format(checkpoint_name))
             sys.exit()
 
-    torch.distributed.barrier()
+    # torch.distributed.barrier()
     if mpu.get_data_parallel_rank() == 0:
         print('  successfully loaded {}'.format(checkpoint_name))
 

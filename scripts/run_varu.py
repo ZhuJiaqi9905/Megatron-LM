@@ -6,7 +6,7 @@ import sys, os, time
 import re
 
 # hosts = ['172.31.44.99', '10.20.23.91', '10.20.23.92', '10.20.23.42']
-hosts = ['172.31.44.99', '172.31.38.220', '172.31.47.180']
+hosts = ['172.31.44.99', '172.31.38.220', '172.31.47.180', '172.31.43.229']
 master_addr = hosts[0]
 ngpus_per_node = 8
 meg_project_dir = '/workspace/Megatron-LM-varuna'
@@ -24,7 +24,7 @@ nstages = {'gpt3_350M': {32: 1, 30: 1, 28: 1, 26: 1, 24: 1, 22: 1, 20: 1, 18: 1,
 mbs = {'gpt3_350M': {32: 8, 30: 8, 28: 8, 26: 8, 24: 8, 22: 8, 20: 8, 18: 8, 16: 8, 14: 8, 12: 8, 10: 8, 8: 8},
        'gpt3_1_3B': {32: 4, 30: 4, 28: 4, 26: 4, 24: 4, 22: 4, 20: 4, 18: 4, 16: 4, 14: 4, 12: 4, 10: 4, 8: 4},
        'gpt3_2_7B': {32: 4, 30: 4, 28: 4, 26: 8, 24: 4, 22: 8, 20: 4, 18: 4, 16: 4, 14: 8, 12: 4, 10: 8, 8: 4},
-       'gpt3_6_7B': {32: 2, 30: 2, 28: 2, 26: 4, 24: 2, 22: 4, 20: 4, 18: 2, 16: 2, 14: 2, 12: 2, 10: 4, 8: 4},
+       'gpt3_6_7B': {32: 4, 30: 2, 28: 2, 26: 4, 24: 4, 22: 4, 20: 4, 18: 2, 16: 2, 14: 2, 12: 2, 10: 4, 8: 4},
         'gpt3_13B': {32: 4, 30: 4, 28: 2, 26: 2, 24: 2, 22: 2, 20: 4, 18: 2, 16: 4, 14: 1, 12: 1, 10: 1, 8: 1}}
 # nstages = {'gpt3_350M': {32: 1, 30: 1, 28: 1, 26: 1, 24: 1, 22: 1, 20: 1, 18: 1, 16: 1, 14: 1, 12: 1, 10: 1, 8: 1},
 #            'gpt3_1_3B': {32: 2, 30: 15, 28: 7, 26: 13, 24: 3, 22: 11, 20: 5, 18: 9, 16: 2, 14: 7, 12: 2, 10: 5, 8: 2},
@@ -114,7 +114,7 @@ def check_finish(success, fail, directory='res/ssh_logs'):
 
 def run_test(number, model_i, load=False):
     assert number <= len(hosts) * ngpus_per_node, f'number: {number} > len(hosts): {len(hosts)} * ngpus_per_node: {ngpus_per_node}'
-    print(f'run {models[model_i]} test {number} nodes')
+    print(f'run {models[model_i]} test {number} nodes load {load}')
     kill_all()
     rm_tmp()
     print('kill all')
@@ -134,18 +134,25 @@ def run_test(number, model_i, load=False):
     # print('finish profile')
     # kill_all()
     generate_available_machines(number, True)
-    output = local.run_command(f'cd {meg_project_dir} && bash ./scripts/pretrain_gpt2_varuna.sh {models[model_i]} {nstages[models[model_i]][number]} {mbs[models[model_i]][number]} {number} {master_addr}')
+    if load:
+        output = local.run_command(f'cd {meg_project_dir} && bash ./scripts/pretrain_gpt2_varuna_load.sh {models[model_i]} {nstages[models[model_i]][number]} {mbs[models[model_i]][number]} {number}')
+    else:
+        output = local.run_command(f'cd {meg_project_dir} && bash ./scripts/pretrain_gpt2_varuna.sh {models[model_i]} {nstages[models[model_i]][number]} {mbs[models[model_i]][number]} {number} {master_addr}')
     print('time to sleep')
     success = False
     fail = False
     start = time.time()
     while time.time() - start < timeout:
         time.sleep(20)
-        success, fail = check_finish(success, fail, f'res/ssh_log_{number}_{models[model_i]}_{nstages[models[model_i]][number]}_{mbs[models[model_i]][number]}')
+        if load:
+            success, fail = check_finish(success, fail, f'res/ssh_log_{number}_{models[model_i]}_{nstages[models[model_i]][number]}_{mbs[models[model_i]][number]}_load')
+        else:
+            success, fail = check_finish(success, fail, f'res/ssh_log_{number}_{models[model_i]}_{nstages[models[model_i]][number]}_{mbs[models[model_i]][number]}')
         if success or fail:
             break
     print(f'time to kill {fail}')
     kill_all()
+    time.sleep(10)
     print('finish pretrain')
     if success:
         # cp_log(number, models[model_i], nstages[models[model_i]][number], mbs[models[model_i]][number])
@@ -157,17 +164,13 @@ def run_test(number, model_i, load=False):
             print(line)
         for line in output.stderr:
             print(line)
-    if load:
-        output = local.run_command(f'cd {meg_project_dir} && bash ./scripts/pretrain_gpt2_varuna_load.sh {models[model_i]} {nstages[models[model_i]][number]} {mbs[models[model_i]][number]} {number}')
-        local.wait_finished(output)
-        for line in output.stdout:
-            print(line)
-        for line in output.stderr:
-            print(line)
 
 # run_test(20, 4)
 
-for i in range(18, 26, 2):
-    run_test(i, 4)
-# for model_i in range(0, len(models)):
-#     run_test(16, model_i)
+# for i in range(30, 34, 2):
+#     for model_size_i in range(len(models)):
+#         run_test(i, model_size_i)
+
+for i in range(8, 34, 2):
+    for model_i in range(0, len(models)):
+        run_test(i, model_i, True)

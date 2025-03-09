@@ -1,5 +1,5 @@
 #!/bin/bash
-addrs=(172.31.44.99 172.31.38.220 172.31.47.180)
+addrs=(172.31.44.99 172.31.38.220 172.31.47.180 172.31.43.229)
 for addr in "${addrs[@]}"; do
     ssh ubuntu@${addr} "cd /workspace/Megatron-LM-varuna && ./scripts/kill.sh" 
 done

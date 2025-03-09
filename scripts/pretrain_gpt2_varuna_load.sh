@@ -4,11 +4,10 @@ model=${1:-"gpt3_350M"}
 nstages=${2:-1}
 mbs=${3:-8}
 total_gpus=${4:-16}
-MASTER_ADDR=${5}
+MASTER_ADDR=${5:-"172.31.44.99"}
 
 gbs=2048
 gpus_per_node=1
-total_gpus=16
 
 
 if [[ "${model}" == "gpt3_350M" ]]; then
