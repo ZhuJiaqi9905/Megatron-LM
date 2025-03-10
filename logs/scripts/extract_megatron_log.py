@@ -9,6 +9,14 @@ import json
 # Regular expression to extract required information from the filename
 filename_pattern = re.compile(r"(\d{4}-\d{2}-\d{2}-\d{2}-\d{2}-\d{2})_(GPT_\S+)_TP(\d+)_MBS(\d+)_SEQ(\d+).log")
 MODEL_CONFIG = {
+    'GPT_1-3B': {
+    "model_name": "GPT_1-3B",
+    "num_layers": 26,
+    "parameters": {
+        "total_parameters_bytes": sum([524288000] + [314705920] * 24 + [524288000]),
+        "parameters_per_layer_bytes": [524288000] + [314705920] * 24 + [524288000]
+    }
+   },
     'GPT_2-6B': {
     "model_name": "GPT_2-6B",
     "num_layers": 34,
@@ -17,8 +25,8 @@ MODEL_CONFIG = {
       "parameters_per_layer_bytes": [524288000] + [314705920] * 32 + [524288000]
     }
   },
-    'GPT_7B': {
-    "model_name": "GPT_7B",
+    'GPT_6-7B': {
+    "model_name": "GPT_6-7B",
     "num_layers": 34,
     "parameters": {
       "total_parameters_bytes": sum([838860800] + [805519360] * 32 + [838860800]),
@@ -310,13 +318,14 @@ def get_df_layer_memory(df, model_size, mbs, seq_len):
     post_process_mem = post_process_weight * (1 + 2 + 4 + 1) + post_process_activation + post_process_reserved 
     return embedding_mem, transformer_mem, post_process_mem
 
-def gen_metis_profile_files(mega_res:List[Dict], csv_folder: str, device: str):
+def gen_metis_profile_files(csv_folder: str, device: str):
     global MODEL_CONFIG
     
-    models = ['GPT_2-6B']
+    # models = ['GPT_1-3B', 'GPT_2-6B', 'GPT_6-7B']
+    models = ['GPT_1-3B']
     tp_values = [1, 2, 4, 8]
-    seq_lens = [4096, 8192]
-    micro_batch_sizes = [1, 2, 4]
+    seq_lens = [8192, 16384, 32768, 65536]
+    micro_batch_sizes = [1, 2 ]
     for model, tp, seq_len, mbs in itertools.product(models, tp_values, seq_lens, micro_batch_sizes):
         print(f'{model} TP_{tp} MBS_{mbs} SEQLEN_{seq_len}')
         result = {
@@ -324,7 +333,11 @@ def gen_metis_profile_files(mega_res:List[Dict], csv_folder: str, device: str):
             'execution_time': None,
             'execution_memory': {} 
         }
-        result['execution_time'] = copy.deepcopy(next((res for res in mega_res if (res['model'] == model and res['tp'] == tp and res['mbs'] == mbs and res['seq_len'] == seq_len)), None)['data'])
+        result['execution_time'] = {
+            "batch_generator_time_ms": 0,
+            "optimizer_time_ms": 0
+        }
+        
         df = pd.read_csv(f'{csv_folder}/{model}_tp_{tp}.csv') 
         embedding_compute, transformer_compute, post_process_compute = get_df_layer_compute(df, model.split('_')[1], mbs, seq_len)
         result['execution_time']['layer_compute_total_ms'] = [embedding_compute] + [transformer_compute] * (result['model']['num_layers'] - 2) + [post_process_compute]
@@ -344,11 +357,11 @@ def gen_metis_profile_files(mega_res:List[Dict], csv_folder: str, device: str):
 # Print the results
 if __name__ == '__main__':
     
-    for device in ['a10g', 'l40s']:
-        log_folder = f'./important/{device}/'
-        log_results = process_logs(log_folder)
-        csv_folder = f'../profiler/aws/{device}/'
-        gen_metis_profile_files(log_results, csv_folder, device)
+    for device in ['a10g', 'l40s', 'l4']:
+        # log_folder = f'./important/{device}/'
+        # log_results = process_logs(log_folder)
+        csv_folder = f'../profiler/aws/{device}/2025-01/'
+        gen_metis_profile_files(csv_folder, device)
         
     # # Display the results
     # for result in log_results:

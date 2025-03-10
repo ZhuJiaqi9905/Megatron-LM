@@ -470,54 +470,57 @@ def initialize_model_parallel(
                 _TENSOR_AND_DATA_PARALLEL_GROUP = group
 
     # Build the tensor + expert parallel groups
-    global _EXPERT_MODEL_PARALLEL_GROUP
-    assert _EXPERT_MODEL_PARALLEL_GROUP is None, 'Expert parallel group is already initialized'
-    global _TENSOR_AND_EXPERT_PARALLEL_GROUP
-    assert (
-        _TENSOR_AND_EXPERT_PARALLEL_GROUP is None
-    ), 'Tensor + expert parallel group is already initialized'
-    global _DATA_MODULO_EXPERT_PARALLEL_GROUP
-    assert (
-        _DATA_MODULO_EXPERT_PARALLEL_GROUP is None
-    ), 'Data modulo expert group is already initialized'
-    global _DATA_MODULO_EXPERT_PARALLEL_GROUP_GLOO
-    tensor_and_data_group_size: int = tensor_model_parallel_size * data_parallel_size
-    num_tensor_and_data_groups: int = world_size // tensor_and_data_group_size
-    tensor_and_expert_group_size: int = tensor_model_parallel_size * expert_model_parallel_size
-    num_expert_groups: int = data_parallel_size // expert_model_parallel_size
-    for i in range(num_tensor_and_data_groups):
-        for j in range(num_expert_groups):
-            # TPxEP Group
-            start_rank = i * tensor_and_data_group_size + j * tensor_and_expert_group_size
-            end_rank = i * tensor_and_data_group_size + (j + 1) * tensor_and_expert_group_size
-            ranks = range(start_rank, end_rank)
-            group = torch.distributed.new_group(
-                ranks, timeout=timeout, pg_options=get_nccl_options('tp_exp', nccl_comm_cfgs)
-            )
-            if rank in ranks:
-                _TENSOR_AND_EXPERT_PARALLEL_GROUP = group
-            for k in range(tensor_model_parallel_size * context_parallel_size):
-                ranks = range(
-                    start_rank + k, end_rank, tensor_model_parallel_size * context_parallel_size
-                )
-                group = torch.distributed.new_group(
-                    ranks, pg_options=get_nccl_options('exp', nccl_comm_cfgs)
-                )
-                if rank in ranks:
-                    _EXPERT_MODEL_PARALLEL_GROUP = group
+    # global _EXPERT_MODEL_PARALLEL_GROUP
+    # assert _EXPERT_MODEL_PARALLEL_GROUP is None, 'Expert parallel group is already initialized'
+    # global _TENSOR_AND_EXPERT_PARALLEL_GROUP
+    # assert (
+    #     _TENSOR_AND_EXPERT_PARALLEL_GROUP is None
+    # ), 'Tensor + expert parallel group is already initialized'
+    # global _DATA_MODULO_EXPERT_PARALLEL_GROUP
+    # assert (
+    #     _DATA_MODULO_EXPERT_PARALLEL_GROUP is None
+    # ), 'Data modulo expert group is already initialized'
+    # global _DATA_MODULO_EXPERT_PARALLEL_GROUP_GLOO
+    # tensor_and_data_group_size: int = tensor_model_parallel_size * data_parallel_size
+    # num_tensor_and_data_groups: int = world_size // tensor_and_data_group_size
+    # tensor_and_expert_group_size: int = tensor_model_parallel_size * expert_model_parallel_size
+    # num_expert_groups: int = data_parallel_size // expert_model_parallel_size
+    # for i in range(num_tensor_and_data_groups):
+    #     for j in range(num_expert_groups):
+    #         # TPxEP Group
+    #         start_rank = i * tensor_and_data_group_size + j * tensor_and_expert_group_size
+    #         end_rank = i * tensor_and_data_group_size + (j + 1) * tensor_and_expert_group_size
+    #         ranks = range(start_rank, end_rank)
+    #         group = torch.distributed.new_group(
+    #             ranks, timeout=timeout, pg_options=get_nccl_options('tp_exp', nccl_comm_cfgs)
+    #         )
+    #         if rank in ranks:
+    #             _TENSOR_AND_EXPERT_PARALLEL_GROUP = group
+    #         for k in range(tensor_model_parallel_size * context_parallel_size):
+    #             ranks = range(
+    #                 start_rank + k, end_rank, tensor_model_parallel_size * context_parallel_size
+    #             )
+    #             # group = torch.distributed.new_group(
+    #             #     ranks, timeout=timeout, pg_options=get_nccl_options('exp', nccl_comm_cfgs)
+    #             # )
+    #             group = torch.distributed.new_group(
+    #                 ranks
+    #             )
+    #             if rank in ranks:
+    #                 _EXPERT_MODEL_PARALLEL_GROUP = group
 
-    for i in range(num_tensor_and_data_groups):
-        start_rank = i * tensor_and_data_group_size
-        end_rank = (i + 1) * tensor_and_data_group_size
-        for j in range(tensor_and_expert_group_size):
-            ranks = range(start_rank + j, end_rank, tensor_and_expert_group_size)
-            group = torch.distributed.new_group(
-                ranks, timeout=timeout, pg_options=get_nccl_options('dp_modulo_exp', nccl_comm_cfgs)
-            )
-            group_gloo = torch.distributed.new_group(ranks, backend="gloo")
-            if rank in ranks:
-                _DATA_MODULO_EXPERT_PARALLEL_GROUP = group
-                _DATA_MODULO_EXPERT_PARALLEL_GROUP_GLOO = group_gloo
+    # for i in range(num_tensor_and_data_groups):
+    #     start_rank = i * tensor_and_data_group_size
+    #     end_rank = (i + 1) * tensor_and_data_group_size
+    #     for j in range(tensor_and_expert_group_size):
+    #         ranks = range(start_rank + j, end_rank, tensor_and_expert_group_size)
+    #         group = torch.distributed.new_group(
+    #             ranks, timeout=timeout, pg_options=get_nccl_options('dp_modulo_exp', nccl_comm_cfgs)
+    #         )
+    #         group_gloo = torch.distributed.new_group(ranks, backend="gloo")
+    #         if rank in ranks:
+    #             _DATA_MODULO_EXPERT_PARALLEL_GROUP = group
+    #             _DATA_MODULO_EXPERT_PARALLEL_GROUP_GLOO = group_gloo
 
     # Initialize global memory buffer
     # This isn't really "parallel state" but there isn't another good place to
@@ -672,6 +675,7 @@ def get_tensor_and_expert_parallel_group():
 
 
 def get_data_modulo_expert_parallel_group():
+    return None
     assert (
         _DATA_MODULO_EXPERT_PARALLEL_GROUP is not None
     ), 'data modulo expert parallel group is not initialized'
@@ -989,6 +993,7 @@ def get_tensor_and_expert_parallel_world_size():
 
 def get_expert_model_parallel_rank():
     """Return my rank for the expert parallel group"""
+    return 0
     if _MPU_EXPERT_MODEL_PARALLEL_RANK:
         return _MPU_EXPERT_MODEL_PARALLEL_RANK
     if torch.distributed.is_available() and torch.distributed.is_initialized():
@@ -1002,6 +1007,7 @@ def get_expert_model_parallel_rank():
 
 def get_data_modulo_expert_parallel_rank():
     """Return my rank for the context parallel group."""
+    return 0
     if torch.distributed.is_available() and torch.distributed.is_initialized():
         return torch.distributed.get_rank(group=get_data_modulo_expert_parallel_group())
     else:

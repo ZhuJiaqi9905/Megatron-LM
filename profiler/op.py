@@ -98,9 +98,10 @@ class OpLanguageModelEmbedding(OpModule):
                 "shape": [self.micro_batch_size, self.seq_length],
                 "tp_split_dim": -1,
                 "dp_split_dim": -1,
-                "cp_split_dim": -1,
+                "cp_split_dim": 1,
             },
-            'position_ids': {'shape': [self.micro_batch_size, self.seq_length,], 'tp_split_dim': -1, 'dp_split_dim': -1}
+            'position_ids': {'shape': [self.micro_batch_size, self.seq_length,], 'tp_split_dim': -1, 'dp_split_dim': -1, 
+                             'cp_split_dim': 1}
         }
         self.output_tensors_info= {
             "hidden_states": {
@@ -178,6 +179,7 @@ class OpLocalLayerNormSelfAttentionDropout(OpModule):
                 "shape": self.hidden_state_size,
                 "tp_split_dim": -1 if not config.sequence_parallel else 0,
                 "dp_split_dim": 1,
+                'cp_split_dim': 0,
             }
         }
         self.output_tensors_info = {
@@ -185,6 +187,7 @@ class OpLocalLayerNormSelfAttentionDropout(OpModule):
                 "shape": self.hidden_state_size,
                 "tp_split_dim": -1 if not config.sequence_parallel else 0,
                 "dp_split_dim": 1,
+                'cp_split_dim': 0,
             }
         }
         self.input_extra_tensors_info = {
@@ -198,6 +201,7 @@ class OpLocalLayerNormSelfAttentionDropout(OpModule):
                 "tp_split_dim": -1,
                 "dp_split_dim": -1,
                 "recv_from": 0,
+                'cp_split_dim': 2,
             }
         }
         self.output_extra_tensors_info = {}
@@ -288,6 +292,7 @@ class OpLocalLayerNormMlpDropout(OpModule):
                 "shape": self.hidden_state_size,
                 "tp_split_dim": -1 if not config.sequence_parallel else 0,
                 "dp_split_dim": 1,
+                'cp_split_dim': 0
             }
         }
         self.output_tensors_info = {
@@ -295,6 +300,7 @@ class OpLocalLayerNormMlpDropout(OpModule):
                 "shape": self.hidden_state_size,
                 "tp_split_dim": -1 if not config.sequence_parallel else 0,
                 "dp_split_dim": 1,
+                'cp_split_dim': 0
             }
         }
         self.input_extra_tensors_info = {}
@@ -395,10 +401,11 @@ class OpLocalLayerNormPostProcess(OpModule):
                 "shape": self.hidden_state_size,
                 "tp_split_dim": -1 if not config.sequence_parallel else 0,
                 "dp_split_dim": 1,
+                'cp_split_dim': 0
             }
         }
         self.output_tensors_info = {
-            "output_tensor": {"shape": [1], "tp_split_dim": -1, "dp_split_dim": -1}
+            "output_tensor": {"shape": [1], "tp_split_dim": -1, "dp_split_dim": -1, 'cp_split_dim': -1}
         }
         self.input_extra_tensors_info = {
             "labels": {
@@ -409,6 +416,7 @@ class OpLocalLayerNormPostProcess(OpModule):
                 "tp_split_dim": -1,
                 "dp_split_dim": 0,
                 "recv_from": 0,
+                'cp_split_dim': 1
             }
         }
         self.shared_weights_info = {
@@ -522,10 +530,11 @@ class OpPostProcess(OpModule):
                 "shape": self.hidden_state_size,
                 "tp_split_dim": -1 if not config.sequence_parallel else 0,
                 "dp_split_dim": 1,
+                'cp_split_dim': 0
             }
         }
         self.output_tensors_info = {
-            "output_tensor": {"shape": [1], "tp_split_dim": -1, "dp_split_dim": -1}
+            "output_tensor": {"shape": [1], "tp_split_dim": -1, "dp_split_dim": -1, 'cp_split_dim': -1}
         }
         self.input_extra_tensors_info = {
             "labels": {
@@ -536,6 +545,7 @@ class OpPostProcess(OpModule):
                 "tp_split_dim": -1,
                 "dp_split_dim": 0,
                 "recv_from": 0,
+                'cp_split_dim': 1
             }
         }
         self.shared_weights_info = {
@@ -602,6 +612,7 @@ class OpLocalLayerNorm(OpModule):
                 "shape": self.hidden_state_size,
                 "tp_split_dim": -1 if not config.sequence_parallel else 0,
                 "dp_split_dim": 1,
+                'cp_split_dim': 0
             }
         }
         self.output_tensors_info = {
@@ -609,6 +620,7 @@ class OpLocalLayerNorm(OpModule):
                 "shape": self.hidden_state_size,
                 "tp_split_dim": -1 if not config.sequence_parallel else 0,
                 "dp_split_dim": 1,
+                'cp_split_dim': 0
             }
         }
         self.weight_size = 0
@@ -680,10 +692,11 @@ class OpTELayerNormPostProcess(OpModule):
                 "shape": self.hidden_state_size,
                 "tp_split_dim": -1 if not config.sequence_parallel else 0,
                 "dp_split_dim": 1,
+                'cp_split_dim': 0
             }
         }
         self.output_tensors_info = {
-            "output_tensor": {"shape": [1], "tp_split_dim": -1, "dp_split_dim": -1}
+            "output_tensor": {"shape": [1], "tp_split_dim": -1, "dp_split_dim": -1, 'cp_split_dim': -1}
         }
         self.input_extra_tensors_info = {
             "labels": {
@@ -693,6 +706,7 @@ class OpTELayerNormPostProcess(OpModule):
                 ],
                 "tp_split_dim": -1,
                 "dp_split_dim": 0,
+                'cp_split_dim': 1,
                 "recv_from": 0,
             }
         }
@@ -765,6 +779,7 @@ class OpTELayerNorm(OpModule):
                 "shape": self.hidden_state_size,
                 "tp_split_dim": -1 if not config.sequence_parallel else 0,
                 "dp_split_dim": 1,
+                'cp_split_dim': 0
             }
         }
         self.output_tensors_info = {
@@ -772,6 +787,7 @@ class OpTELayerNorm(OpModule):
                 "shape": self.hidden_state_size,
                 "tp_split_dim": -1 if not config.sequence_parallel else 0,
                 "dp_split_dim": 1,
+                'cp_split_dim': 0
             }
         }
         self.weight_size = 0
@@ -832,6 +848,7 @@ class OpTELayerNormMlpDropout(OpModule):
                 "shape": self.hidden_state_size,
                 "tp_split_dim": -1 if not config.sequence_parallel else 0,
                 "dp_split_dim": 1,
+                'cp_split_dim': 0
             }
         }
         self.output_tensors_info = {
@@ -839,6 +856,7 @@ class OpTELayerNormMlpDropout(OpModule):
                 "shape": self.hidden_state_size,
                 "tp_split_dim": -1 if not config.sequence_parallel else 0,
                 "dp_split_dim": 1,
+                'cp_split_dim': 0
             }
         }
         self.input_extra_tensors_info = {}
@@ -934,6 +952,7 @@ class OpTELayerNormSelfAttentionDropout(OpModule):
                 "shape": self.hidden_state_size,
                 "tp_split_dim": -1 if not config.sequence_parallel else 0,
                 "dp_split_dim": 1,
+                'cp_split_dim': 0
             }
         }
         self.output_tensors_info = {
@@ -941,6 +960,7 @@ class OpTELayerNormSelfAttentionDropout(OpModule):
                 "shape": self.hidden_state_size,
                 "tp_split_dim": -1 if not config.sequence_parallel else 0,
                 "dp_split_dim": 1,
+                'cp_split_dim': 0
             }
         }
         self.input_extra_tensors_info = {
@@ -954,6 +974,7 @@ class OpTELayerNormSelfAttentionDropout(OpModule):
                 "tp_split_dim": -1,
                 "dp_split_dim": -1,
                 "recv_from": 0,
+                'cp_split_dim': 2
             }
         }
         self.output_extra_tensors_info = {}
@@ -1018,16 +1039,19 @@ class OpTECoreAttention(OpModule):
                 "shape": [config.seq_length, config.micro_batch_size, config.num_attention_heads, config.kv_channels],
                 "tp_split_dim": 2,
                 "dp_split_dim": 1,
+                'cp_split_dim': 0
             },
             "key": {
                 "shape": [config.seq_length_kv, config.micro_batch_size, config.num_attention_heads, config.kv_channels],
                 "tp_split_dim": 2,
-                "dp_split_dim": 1,               
+                "dp_split_dim": 1,      
+                'cp_split_dim': 0         
             },
             "value": {
                 "shape": [config.seq_length_kv, config.micro_batch_size, config.num_attention_heads, config.kv_channels], 
                 "tp_split_dim": 2,
-                "dp_split_dim": 1,                
+                "dp_split_dim": 1,     
+                'cp_split_dim': 0           
             }
         }
         self.input_extra_tensors_info = {}
@@ -1040,6 +1064,7 @@ class OpTECoreAttention(OpModule):
             ],
                 "tp_split_dim": -1 if not config.sequence_parallel else 0,
                 "dp_split_dim": 1,
+                'cp_split_dim': 0
             }
         }
         self.output_extra_tensors_info = {}   
