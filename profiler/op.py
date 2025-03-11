@@ -92,7 +92,7 @@ class OpLanguageModelEmbedding(OpModule):
         
         for param in self.embedding.parameters():
             self.weight_size += param.numel()
-
+        self.weight_size // self.tp_size
         self.input_tensors_info = {
             "input_ids": {
                 "shape": [self.micro_batch_size, self.seq_length],

@@ -52,11 +52,9 @@ class LanguageModelEmbedding(MegatronModule):
             self.position_embeddings = torch.nn.Embedding(
                 self.max_sequence_length, self.config.hidden_size
             )
-
             # Initialize the position embeddings.
             if self.config.perform_initialization:
                 self.config.init_method(self.position_embeddings.weight)
-
         if self.num_tokentypes > 0:
             self.tokentype_embeddings = torch.nn.Embedding(
                 self.num_tokentypes, self.config.hidden_size

@@ -1,5 +1,5 @@
 #!/bin/bash
-export CUDA_VISIBLE_DEVICES="4,5,6,7"
+# export CUDA_VISIBLE_DEVICES="4,5,6,7"
 export PYTHONPATH="/workspace/python/Megatron-LM-0.6.0/:${PYTHONPATH}:/workspace/python/Megatron-LM/:/workspace/Megatron-LM/"
 export CUDA_DEVICE_MAX_CONNECTIONS=1
 MASTER_ADDR=localhost
@@ -8,7 +8,7 @@ NNODES=1
 NODE_RANK=0
 
 RUNTIME_PATH=$(pwd)/
-PROFILING_PATH=${RUNTIME_PATH}/aws/a10g/
+PROFILING_PATH=${RUNTIME_PATH}/
 
 mkdir -p ${PROFILING_PATH}
 MAX_NUM_GPUS=4
@@ -56,7 +56,7 @@ GPT_ARGS="
 "
 
 
-for ((tp_size = 2; tp_size <= MAX_NUM_GPUS; tp_size=tp_size*2))
+for ((tp_size = 1; tp_size <= MAX_NUM_GPUS; tp_size=tp_size*2))
 do
     for ((cp_size = 1; cp_size * tp_size <= MAX_NUM_GPUS; cp_size=cp_size*2))
     do
