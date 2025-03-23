@@ -9,7 +9,7 @@ model_prof_configs = {
         "mbs": [
             1, 
             2, 
-            # 3,
+            3,
             # 4, 
             # 5,
             # 6,
@@ -25,10 +25,10 @@ model_prof_configs = {
             # 2560,
             # 3072,
             # 3584,
-            # 4096,
-            8192,
-           16 * 1024,
-           32 * 1024,
+            4096,
+            # 8192,
+        #    16 * 1024,
+        #    32 * 1024,
         #    64 * 1024,
             ], 
         "seq_len_kv": [ # used when enable --prof-core-attention
