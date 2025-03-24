@@ -3,13 +3,13 @@
 
 ## "algo" stands for tensor parallel partition algorithm
 model_prof_configs = {
-    "gpt": {
+    "GPT": {
         "dtype": "fp16",
         "model_size": ["350M", "1_3B", "2_6B", "6_7B",],
         "mbs": [
             1, 
             2, 
-            3,
+            # 3,
             # 4, 
             # 5,
             # 6,
@@ -25,7 +25,7 @@ model_prof_configs = {
             # 2560,
             # 3072,
             # 3584,
-            4096,
+            # 4096,
             8192,
            16 * 1024,
            32 * 1024,

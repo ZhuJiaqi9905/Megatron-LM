@@ -57,7 +57,7 @@ def print_rank0(str):
 
 
 def get_config(model_name: str, model_size: str)-> TransformerConfig:
-    if model_name == "gpt":
+    if model_name == "GPT":
         (
             num_layers,
             hidden_size,
@@ -557,7 +557,7 @@ if __name__ == "__main__":
     
     initialize_megatron()
     args = get_args()
-    model_names = ["resnet", "gpt", "t5"] if args.prof_model_name == "all" else [args.prof_model_name]
+    model_names = ["resnet", "GPT", "t5"] if args.prof_model_name == "all" else [args.prof_model_name]
     all_prof_tasks = []
     
     for model_name in model_names:
@@ -580,5 +580,5 @@ if __name__ == "__main__":
         run_profile(prof_task)
     end_profiling_time = time.time()
     if torch.distributed.get_rank() == 0: 
-        data.to_csv(f"{'.' if args.prof_path is None else args.prof_path}/{datetime.now().strftime('%Y%m%d_%H%M%S')}_{args.prof_model_name}-{args.prof_model_size}_tp_{mpu.get_tensor_model_parallel_world_size()}_cp_{mpu.get_context_parallel_world_size()}.csv", index=False)
+        data.to_csv(f"{'.' if args.prof_path is None else args.prof_path}/{args.prof_model_name}_{args.prof_model_size}_tp_{mpu.get_tensor_model_parallel_world_size()}_cp_{mpu.get_context_parallel_world_size()}.csv", index=False)
     print_rank0(f"[TOTAL PROFILING TIME] {end_profiling_time - start_profiling_time:2f} s")
