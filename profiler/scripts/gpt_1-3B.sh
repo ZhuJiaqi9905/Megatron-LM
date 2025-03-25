@@ -60,8 +60,8 @@ GPT_ARGS="
 # do
 #     for ((cp_size = 1; cp_size * tp_size <= MAX_NUM_GPUS; cp_size=cp_size*2))
 #     do
-        tp_size=1
-        cp_size=8 
+        tp_size=8
+        cp_size=1
         GPUS_PER_NODE=$((tp_size * cp_size))
         DISTRIBUTED_ARGS="--nproc_per_node $GPUS_PER_NODE --nnodes $NNODES --node_rank $NODE_RANK --master_addr $MASTER_ADDR --master_port $MASTER_PORT"
 
